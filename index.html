@@ -1,0 +1,1352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Payroll Management System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0b0e;
+    --surface: #111318;
+    --surface2: #181c24;
+    --border: #222633;
+    --accent: #4fffb0;
+    --accent2: #7b8cff;
+    --accent3: #ffb347;
+    --accent4: #ff6b8a;
+    --text: #e8eaf2;
+    --text-dim: #6b7390;
+    --text-mid: #a0a8c0;
+    --green: #4fffb0;
+    --red: #ff6b8a;
+    --mono: 'DM Mono', monospace;
+    --sans: 'Syne', sans-serif;
+    --radius: 6px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--mono); min-height: 100vh; overflow-x: hidden; }
+
+  /* ── LAYOUT ── */
+  #app { display: flex; flex-direction: column; min-height: 100vh; }
+  header { display: flex; align-items: center; justify-content: space-between; padding: 18px 32px; border-bottom: 1px solid var(--border); background: var(--surface); position: sticky; top: 0; z-index: 100; }
+  .logo { font-family: var(--sans); font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
+  .logo span { color: var(--accent); }
+  .header-meta { font-size: 11px; color: var(--text-dim); text-align: right; }
+
+  nav { display: flex; gap: 2px; padding: 0 32px; background: var(--surface); border-bottom: 1px solid var(--border); overflow-x: auto; }
+  nav button { font-family: var(--mono); font-size: 12px; padding: 12px 18px; background: none; border: none; color: var(--text-dim); cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; transition: all .18s; letter-spacing: .04em; }
+  nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+  nav button:hover:not(.active) { color: var(--text); }
+
+  main { flex: 1; padding: 28px 32px; max-width: 1400px; width: 100%; margin: 0 auto; }
+  .tab { display: none; }
+  .tab.active { display: block; }
+
+  /* ── CARDS / STATS ── */
+  .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 28px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; position: relative; overflow: hidden; }
+  .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--accent-color, var(--accent)); }
+  .stat-card .label { font-size: 10px; color: var(--text-dim); letter-spacing: .12em; text-transform: uppercase; margin-bottom: 8px; }
+  .stat-card .value { font-family: var(--sans); font-size: 26px; font-weight: 700; }
+  .stat-card .sub { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+
+  /* ── TABLE ── */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  thead th { background: var(--surface2); padding: 10px 14px; text-align: left; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--text-dim); border-bottom: 1px solid var(--border); white-space: nowrap; }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background .12s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--surface2); }
+  tbody td { padding: 10px 14px; vertical-align: middle; white-space: nowrap; }
+  .td-wrap { max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* ── FORM ── */
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  label { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--text-dim); }
+  input, select, textarea { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 9px 12px; color: var(--text); font-family: var(--mono); font-size: 12px; outline: none; transition: border-color .15s; }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+  select option { background: var(--surface2); }
+  textarea { resize: vertical; min-height: 80px; }
+  .form-actions { display: flex; gap: 10px; padding-top: 4px; }
+  .btn { font-family: var(--mono); font-size: 12px; padding: 9px 20px; border-radius: var(--radius); border: none; cursor: pointer; letter-spacing: .06em; transition: all .15s; }
+  .btn-primary { background: var(--accent); color: #000; font-weight: 600; }
+  .btn-primary:hover { filter: brightness(1.1); }
+  .btn-secondary { background: var(--surface2); border: 1px solid var(--border); color: var(--text); }
+  .btn-secondary:hover { border-color: var(--text-mid); }
+  .btn-danger { background: transparent; border: 1px solid var(--red); color: var(--red); }
+  .btn-danger:hover { background: var(--red); color: #000; }
+  .btn-sm { padding: 5px 12px; font-size: 11px; }
+  .btn-icon { padding: 5px 8px; background: transparent; border: 1px solid var(--border); border-radius: var(--radius); color: var(--text-dim); cursor: pointer; font-size: 11px; transition: all .15s; }
+  .btn-icon:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── BADGES ── */
+  .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 20px; font-size: 10px; letter-spacing: .06em; font-weight: 500; }
+  .badge-eur { background: rgba(123,140,255,.15); color: var(--accent2); }
+  .badge-usd { background: rgba(79,255,176,.15); color: var(--green); }
+  .badge-php { background: rgba(255,179,71,.15); color: var(--accent3); }
+  .badge-sgd { background: rgba(255,107,138,.15); color: var(--accent4); }
+  .badge-paid { background: rgba(79,255,176,.12); color: var(--green); }
+  .badge-unpaid { background: rgba(255,107,138,.12); color: var(--red); }
+
+  /* ── SECTION HEADER ── */
+  .section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; flex-wrap: wrap; gap: 12px; }
+  .section-head h2 { font-family: var(--sans); font-size: 18px; font-weight: 700; }
+  .section-head p { font-size: 11px; color: var(--text-dim); margin-top: 3px; }
+  .search-box { display: flex; gap: 8px; align-items: center; }
+  .search-box input { width: 220px; }
+
+  /* ── MODAL ── */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 999; display: none; place-items: center; backdrop-filter: blur(4px); }
+  .modal-overlay.open { display: grid; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; width: min(700px, 95vw); max-height: 90vh; overflow-y: auto; padding: 28px; position: relative; animation: slideUp .2s ease; }
+  @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+  .modal-head h3 { font-family: var(--sans); font-size: 16px; font-weight: 700; }
+  .modal-close { background: none; border: 1px solid var(--border); border-radius: var(--radius); color: var(--text-dim); cursor: pointer; padding: 4px 10px; font-size: 14px; }
+  .modal-close:hover { color: var(--text); }
+
+  /* ── DASHBOARD CHART ── */
+  .chart-bar-wrap { display: flex; flex-direction: column; gap: 8px; }
+  .chart-bar-row { display: flex; align-items: center; gap: 10px; font-size: 11px; }
+  .chart-bar-label { width: 110px; text-align: right; color: var(--text-mid); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .chart-bar-track { flex: 1; background: var(--border); border-radius: 2px; height: 18px; position: relative; }
+  .chart-bar-fill { height: 100%; border-radius: 2px; transition: width .5s ease; display: flex; align-items: center; padding-left: 8px; font-size: 10px; color: #000; font-weight: 600; }
+  .chart-bar-val { width: 90px; text-align: right; color: var(--text-dim); font-size: 10px; }
+
+  /* ── TABS within tab ── */
+  .subtabs { display: flex; gap: 2px; margin-bottom: 20px; border-bottom: 1px solid var(--border); }
+  .subtabs button { font-family: var(--mono); font-size: 11px; padding: 8px 14px; background: none; border: none; color: var(--text-dim); cursor: pointer; border-bottom: 2px solid transparent; transition: all .15s; }
+  .subtabs button.active { color: var(--accent2); border-bottom-color: var(--accent2); }
+  .subtab { display: none; }
+  .subtab.active { display: block; }
+
+  /* ── MISC ── */
+  .empty { text-align: center; padding: 60px 20px; color: var(--text-dim); font-size: 13px; }
+  .empty .icon { font-size: 40px; margin-bottom: 12px; }
+  .total-row td { font-weight: 700; color: var(--accent); border-top: 2px solid var(--border); }
+  .currency-usd { color: var(--green); }
+  .currency-eur { color: var(--accent2); }
+  .currency-php { color: var(--accent3); }
+  .currency-sgd { color: var(--accent4); }
+  .divider { height: 1px; background: var(--border); margin: 20px 0; }
+  .info-box { background: var(--surface2); border: 1px solid var(--border); border-left: 3px solid var(--accent2); border-radius: var(--radius); padding: 14px 16px; font-size: 12px; color: var(--text-mid); margin-bottom: 20px; line-height: 1.6; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  @media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } main { padding: 16px; } nav { padding: 0 16px; } header { padding: 14px 16px; } }
+  .filter-row { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+  .filter-row select, .filter-row input { width: auto; }
+  .tag { display: inline-block; background: var(--surface2); border: 1px solid var(--border); border-radius: 3px; padding: 2px 7px; font-size: 10px; color: var(--text-mid); margin: 1px; }
+  .amount-pos { color: var(--green); }
+  .amount-neg { color: var(--red); }
+  .delete-btn { color: var(--red); background: none; border: none; cursor: pointer; font-size: 14px; padding: 2px 6px; border-radius: 3px; transition: background .12s; }
+  .delete-btn:hover { background: rgba(255,107,138,.1); }
+  .edit-btn { color: var(--accent2); background: none; border: none; cursor: pointer; font-size: 13px; padding: 2px 6px; border-radius: 3px; transition: background .12s; }
+  .edit-btn:hover { background: rgba(123,140,255,.1); }
+  #toast { position: fixed; bottom: 24px; right: 24px; background: var(--accent); color: #000; padding: 10px 20px; border-radius: var(--radius); font-size: 12px; font-weight: 600; z-index: 9999; display: none; animation: fadeIn .2s; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .highlight { background: rgba(79,255,176,.08); }
+  .formula-tag { font-size: 9px; color: var(--accent); background: rgba(79,255,176,.1); border: 1px solid rgba(79,255,176,.2); border-radius: 2px; padding: 1px 5px; margin-left: 4px; vertical-align: middle; }
+</style>
+</head>
+<body>
+<div id="app">
+<header>
+  <div>
+    <div class="logo">ORTUS<span>PAY</span></div>
+    <div class="header-meta">Payroll Management System</div>
+  </div>
+  <div class="header-meta" id="headerDate"></div>
+</header>
+
+<nav>
+  <button class="active" onclick="showTab('dashboard')">📊 Dashboard</button>
+  <button onclick="showTab('employees')">👥 Employees</button>
+  <button onclick="showTab('payroll')">💳 Payroll</button>
+  <button onclick="showTab('reimbursements')">🧾 Reimbursements</button>
+  <button onclick="showTab('bonuses')">🎁 Bonuses</button>
+  <button onclick="showTab('tracker')">📈 Tracker</button>
+  <button onclick="showTab('cb')">📋 Compensation Book</button>
+  <button onclick="showTab('dbt')">🔒 DBT</button>
+  <button onclick="showTab('conversions')">💱 FX Rates</button>
+</nav>
+
+<main>
+
+<!-- ───── DASHBOARD ───── -->
+<div id="tab-dashboard" class="tab active">
+  <div class="section-head">
+    <div><h2>Dashboard</h2><p>Live computed overview of all payroll data</p></div>
+    <button class="btn btn-secondary btn-sm" onclick="refreshDashboard()">↻ Refresh</button>
+  </div>
+  <div class="stats-row" id="dashStats"></div>
+  <div class="two-col">
+    <div>
+      <h3 style="font-family:var(--sans);font-size:14px;margin-bottom:14px;">Top Salaries (USD equiv.)</h3>
+      <div class="chart-bar-wrap" id="salaryChart"></div>
+    </div>
+    <div>
+      <h3 style="font-family:var(--sans);font-size:14px;margin-bottom:14px;">Monthly Payroll by Currency</h3>
+      <div id="currencyBreakdown"></div>
+    </div>
+  </div>
+  <div class="divider"></div>
+  <h3 style="font-family:var(--sans);font-size:14px;margin-bottom:14px;">Recent Payroll Entries</h3>
+  <div class="table-wrap"><table id="recentPayrollTable">
+    <thead><tr><th>Name</th><th>Period</th><th>Salary</th><th>Commissions</th><th>Total</th><th>Currency</th><th>Date Paid</th></tr></thead>
+    <tbody id="recentPayrollBody"></tbody>
+  </table></div>
+</div>
+
+<!-- ───── EMPLOYEES ───── -->
+<div id="tab-employees" class="tab">
+  <div class="section-head">
+    <div><h2>Employees</h2><p>Active & former employee registry</p></div>
+    <div class="search-box">
+      <input id="empSearch" placeholder="Search by name or email…" oninput="renderEmployees()" style="width:220px">
+      <button class="btn btn-primary btn-sm" onclick="openModal('empModal')">+ Add Employee</button>
+    </div>
+  </div>
+  <div class="filter-row">
+    <select id="empCurrFilter" onchange="renderEmployees()">
+      <option value="">All Currencies</option>
+      <option>EUR</option><option>USD</option><option>PHP</option><option>SGD</option>
+    </select>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Name</th><th>Email</th><th>Monthly Rate</th><th>Currency</th><th>Start Date</th><th>Notes</th><th>Actions</th></tr></thead>
+      <tbody id="empBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ───── PAYROLL ───── -->
+<div id="tab-payroll" class="tab">
+  <div class="section-head">
+    <div><h2>Payroll Log</h2><p>All payroll entries with auto-computed totals <span class="formula-tag">AUTO-COMPUTE</span></p></div>
+    <div class="search-box">
+      <input id="paySearch" placeholder="Search name…" oninput="renderPayroll()" style="width:180px">
+      <button class="btn btn-primary btn-sm" onclick="openModal('payModal')">+ Add Entry</button>
+    </div>
+  </div>
+  <div class="filter-row">
+    <select id="payYearFilter" onchange="renderPayroll()"><option value="">All Years</option></select>
+    <select id="payCurrFilter" onchange="renderPayroll()"><option value="">All Currencies</option><option>EUR</option><option>USD</option><option>PHP</option><option>SGD</option></select>
+    <select id="payNameFilter" onchange="renderPayroll()"><option value="">All Employees</option></select>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>Name</th><th>Start</th><th>End</th><th>Currency</th><th>Rate</th>
+        <th>Night Diff</th><th>Adjustments</th><th>Deductions</th><th>Reimbursements</th>
+        <th title="Rate + Night Diff + Adjustments - Deductions + Reimbursements">Salary <span class="formula-tag">∑</span></th>
+        <th>Comm (USD)</th><th>Comm (LC)</th><th>Total <span class="formula-tag">∑</span></th><th>Deal Tag</th><th>Date Paid</th><th>GD/TL Comms</th><th>Actions</th>
+      </tr></thead>
+      <tbody id="payBody"></tbody>
+    </table>
+  </div>
+  <div style="margin-top:14px;padding:14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);font-size:12px;">
+    <strong>Totals (filtered):</strong>&nbsp;
+    <span id="payTotalSalary"></span>&nbsp;|&nbsp;
+    <span id="payTotalComm"></span>&nbsp;|&nbsp;
+    <span id="payTotalTotal"></span>
+  </div>
+</div>
+
+<!-- ───── REIMBURSEMENTS ───── -->
+<div id="tab-reimbursements" class="tab">
+  <div class="section-head">
+    <div><h2>Reimbursements</h2><p>Expense claims &amp; reimbursements <span class="formula-tag">AUTO-COMPUTE</span></p></div>
+    <div class="search-box">
+      <input id="reimSearch" placeholder="Search…" oninput="renderReimb()" style="width:180px">
+      <button class="btn btn-primary btn-sm" onclick="openModal('reimModal')">+ Add Reimbursement</button>
+    </div>
+  </div>
+  <div class="filter-row">
+    <select id="reimCatFilter" onchange="renderReimb()">
+      <option value="">All Categories</option>
+      <option>F&B</option><option>Transportation</option><option>IT</option><option>Office Entertainment</option><option>MOC and Other Help</option><option>Other</option>
+    </select>
+    <select id="reimPaidFilter" onchange="renderReimb()"><option value="">Paid &amp; Unpaid</option><option value="Y">Paid</option><option value="N">Unpaid</option></select>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Date</th><th>Email</th><th>Category</th><th>Description</th><th>Amount</th><th>Currency</th><th>Exch Rate</th><th>Total (Orig Curr) <span class="formula-tag">∑</span></th><th>Project Code</th><th>Paid</th><th>Receipt</th><th>Actions</th></tr></thead>
+      <tbody id="reimBody"></tbody>
+    </table>
+  </div>
+  <div style="margin-top:14px;padding:14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);font-size:12px;" id="reimTotals"></div>
+</div>
+
+<!-- ───── BONUSES ───── -->
+<div id="tab-bonuses" class="tab">
+  <div class="section-head">
+    <div><h2>Bonus Sheet</h2><p>Milestone, commission &amp; incentive payouts</p></div>
+    <button class="btn btn-primary btn-sm" onclick="openModal('bonusModal')">+ Add Bonus</button>
+  </div>
+  <div class="filter-row">
+    <select id="bonusCatFilter" onchange="renderBonuses()"><option value="">All Categories</option></select>
+    <input id="bonusSearch" placeholder="Search name or email…" oninput="renderBonuses()" style="width:180px">
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Email</th><th>Name</th><th>Category</th><th>Designation</th><th>Description</th><th>Amount <span class="formula-tag">∑</span></th><th>Currency</th><th>Payout Date</th><th>Actions</th></tr></thead>
+      <tbody id="bonusBody"></tbody>
+    </table>
+  </div>
+  <div style="margin-top:14px;padding:14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);font-size:12px;" id="bonusTotals"></div>
+</div>
+
+<!-- ───── TRACKER ───── -->
+<div id="tab-tracker" class="tab">
+  <div class="section-head">
+    <div><h2>Earnings Tracker</h2><p>Cumulative salary & commission per person by year <span class="formula-tag">AUTO-SUM</span></p></div>
+    <button class="btn btn-primary btn-sm" onclick="openModal('trackerModal')">+ Add Entry</button>
+  </div>
+  <div class="info-box">Each row stores Salary and Commission per person per year. Totals auto-compute across all years.</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Person</th><th>Type</th><th>2019</th><th>2020</th><th>2021</th><th>2022</th><th>2023</th><th>2024</th><th>2025</th><th>TOTAL <span class="formula-tag">∑</span></th><th>Actions</th></tr></thead>
+      <tbody id="trackerBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ───── COMPENSATION BOOK ───── -->
+<div id="tab-cb" class="tab">
+  <div class="section-head">
+    <div><h2>Compensation Book</h2><p>Bonus structures, policies &amp; commission tiers</p></div>
+    <button class="btn btn-primary btn-sm" onclick="openModal('cbModal')">+ Add Policy</button>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Eligibility</th><th>Department</th><th>Bonus Name</th><th>Conditions / Terms</th><th>Amount (PHP)</th><th>Amount (EUR)</th><th>Distribution</th><th>Discontinued</th><th>Notes</th><th>Actions</th></tr></thead>
+      <tbody id="cbBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ───── DBT ───── -->
+<div id="tab-dbt" class="tab">
+  <div class="section-head">
+    <div><h2>DBT — Salary Table</h2><p>Current salary reference for special employee group</p></div>
+    <button class="btn btn-primary btn-sm" onclick="openModal('dbtModal')">+ Add Record</button>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Email</th><th>Current Salary</th><th>Currency</th><th>Actions</th></tr></thead>
+      <tbody id="dbtBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ───── FX RATES ───── -->
+<div id="tab-conversions" class="tab">
+  <div class="section-head">
+    <div><h2>FX Conversion Rates</h2><p>Used to compute USD-equivalent totals <span class="formula-tag">AUTO-COMPUTE</span></p></div>
+    <button class="btn btn-primary btn-sm" onclick="openModal('fxModal')">+ Add Rate</button>
+  </div>
+  <div class="info-box">These rates are used throughout the system to convert salaries and commissions to USD for comparison. Update regularly.</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Pair</th><th>Rate</th><th>Last Updated</th><th>Actions</th></tr></thead>
+      <tbody id="fxBody"></tbody>
+    </table>
+  </div>
+  <div class="divider"></div>
+  <h3 style="font-family:var(--sans);font-size:14px;margin-bottom:10px;">Quick Convert</h3>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+    <input id="convertAmount" type="number" placeholder="Amount" style="width:140px">
+    <select id="convertFrom" style="width:100px"><option>EUR</option><option>USD</option><option>PHP</option><option>SGD</option></select>
+    <span style="color:var(--text-dim)">→</span>
+    <select id="convertTo" style="width:100px"><option>USD</option><option>EUR</option><option>PHP</option><option>SGD</option></select>
+    <button class="btn btn-primary btn-sm" onclick="doConvert()">Convert</button>
+    <span id="convertResult" style="font-family:var(--sans);font-weight:700;font-size:18px;color:var(--accent)"></span>
+  </div>
+</div>
+
+</main>
+</div><!-- /#app -->
+
+<!-- ──────── MODALS ──────── -->
+
+<!-- Employee Modal -->
+<div class="modal-overlay" id="empModal">
+  <div class="modal">
+    <div class="modal-head"><h3 id="empModalTitle">Add Employee</h3><button class="modal-close" onclick="closeModal('empModal')">✕</button></div>
+    <input type="hidden" id="empEditIdx">
+    <div class="form-grid">
+      <div class="form-group"><label>Full Name *</label><input id="empName" placeholder="e.g. Maria Yoko Rodriguez"></div>
+      <div class="form-group"><label>Email *</label><input id="empEmail" type="email" placeholder="name@ortusclub.com"></div>
+      <div class="form-group"><label>Monthly Rate *</label><input id="empRate" type="number" step="0.01" placeholder="e.g. 2500"></div>
+      <div class="form-group"><label>Currency</label><select id="empCurr"><option>EUR</option><option>USD</option><option>PHP</option><option>SGD</option></select></div>
+      <div class="form-group"><label>Start Date</label><input id="empStart" type="date"></div>
+      <div class="form-group"><label>Notes</label><input id="empNotes" placeholder="Optional notes"></div>
+    </div>
+    <div class="form-actions"><button class="btn btn-primary" onclick="saveEmployee()">Save Employee</button><button class="btn btn-secondary" onclick="closeModal('empModal')">Cancel</button></div>
+  </div>
+</div>
+
+<!-- Payroll Modal -->
+<div class="modal-overlay" id="payModal">
+  <div class="modal">
+    <div class="modal-head"><h3 id="payModalTitle">Add Payroll Entry</h3><button class="modal-close" onclick="closeModal('payModal')">✕</button></div>
+    <input type="hidden" id="payEditIdx">
+    <div class="form-grid">
+      <div class="form-group"><label>Employee Name *</label><input id="payName" list="payNameList" placeholder="Type name…"><datalist id="payNameList"></datalist></div>
+      <div class="form-group"><label>Email</label><input id="payEmail" type="email"></div>
+      <div class="form-group"><label>Start of Pay Period *</label><input id="payStart" type="date"></div>
+      <div class="form-group"><label>End of Pay Period *</label><input id="payEnd" type="date"></div>
+      <div class="form-group"><label>Currency</label><select id="payCurr"><option>EUR</option><option>USD</option><option>PHP</option><option>SGD</option></select></div>
+      <div class="form-group"><label>Rate</label><input id="payRate" type="number" step="0.01" placeholder="Monthly rate"></div>
+      <div class="form-group"><label>Night Differential</label><input id="payNightDiff" type="number" step="0.01" value="0"></div>
+      <div class="form-group"><label>Adjustments</label><input id="payAdj" type="number" step="0.01" value="0"></div>
+      <div class="form-group"><label>Deductions</label><input id="payDed" type="number" step="0.01" value="0"></div>
+      <div class="form-group"><label>Reimbursements</label><input id="payReimb" type="number" step="0.01" value="0"></div>
+      <div class="form-group"><label>Salary <span class="formula-tag">AUTO</span></label><input id="paySalary" readonly style="color:var(--accent)"></div>
+      <div class="form-group"><label>Sales Comm (USD)</label><input id="payCommUSD" type="number" step="0.01" value="0"></div>
+      <div class="form-group"><label>Sales Comm (LC)</label><input id="payCommLC" type="number" step="0.01" value="0"></div>
+      <div class="form-group"><label>Total <span class="formula-tag">AUTO</span></label><input id="payTotal" readonly style="color:var(--accent)"></div>
+      <div class="form-group"><label>GD/TL Comms</label><input id="payGDComms" type="number" step="0.01" value="0"></div>
+      <div class="form-group"><label>Date Paid</label><input id="payDatePaid" type="date"></div>
+    </div>
+    <div class="form-group" style="margin-bottom:14px"><label>Deal Tag</label><input id="payDealTag" placeholder="e.g. CLF_US, BVOY_EMEA (128.00 USD)"></div>
+    <div class="form-group" style="margin-bottom:14px"><label>Notes</label><textarea id="payNotes"></textarea></div>
+    <div class="form-group" style="margin-bottom:14px"><label>Receipt Link (GDrive URL)</label><input id="payReceipt" placeholder="https://drive.google.com/…"></div>
+    <div class="form-group" style="margin-bottom:14px"><label>Overhead</label><input id="payOverhead" type="number" step="0.01" value="0"></div>
+    <div class="form-actions"><button class="btn btn-primary" onclick="savePayroll()">Save Entry</button><button class="btn btn-secondary" onclick="closeModal('payModal')">Cancel</button></div>
+  </div>
+</div>
+
+<!-- Reimb Modal -->
+<div class="modal-overlay" id="reimModal">
+  <div class="modal">
+    <div class="modal-head"><h3>Add Reimbursement</h3><button class="modal-close" onclick="closeModal('reimModal')">✕</button></div>
+    <input type="hidden" id="reimEditIdx">
+    <div class="form-grid">
+      <div class="form-group"><label>Email *</label><input id="reimEmail" type="email" list="reimEmailList" placeholder="employee@ortusclub.com"><datalist id="reimEmailList"></datalist></div>
+      <div class="form-group"><label>Category *</label><select id="reimCat"><option>F&B</option><option>Transportation</option><option>IT</option><option>Office Entertainment</option><option>MOC and Other Help</option><option>Other</option></select></div>
+      <div class="form-group"><label>Subcategory</label><input id="reimSubcat" placeholder="Optional subcategory"></div>
+      <div class="form-group"><label>Purchase Date *</label><input id="reimDate" type="date"></div>
+      <div class="form-group"><label>Amount *</label><input id="reimAmount" type="number" step="0.01"></div>
+      <div class="form-group"><label>Original Currency</label><select id="reimOrigCurr"><option>EUR</option><option>USD</option><option>PHP</option><option>SGD</option></select></div>
+      <div class="form-group"><label>Employee Currency</label><select id="reimEmpCurr"><option>EUR</option><option>USD</option><option>PHP</option><option>SGD</option></select></div>
+      <div class="form-group"><label>Exchange Rate</label><input id="reimExchRate" type="number" step="0.000001" value="1"></div>
+      <div class="form-group"><label>Total <span class="formula-tag">AUTO</span></label><input id="reimTotal" readonly style="color:var(--accent)"></div>
+      <div class="form-group"><label>Project Code</label><input id="reimProjectCode" placeholder="e.g. Ortus, CLF_US"></div>
+      <div class="form-group"><label>Receipt Number</label><input id="reimReceiptNum" placeholder="e.g. 0001234"></div>
+      <div class="form-group"><label>Paid?</label><select id="reimPaid"><option value="Y">Yes (Y)</option><option value="N">No (N)</option></select></div>
+    </div>
+    <div class="form-group" style="margin-bottom:14px"><label>Item Description *</label><textarea id="reimDesc"></textarea></div>
+    <div class="form-group" style="margin-bottom:14px"><label>Link to Receipt</label><input id="reimReceiptLink" placeholder="https://drive.google.com/…"></div>
+    <div class="form-actions"><button class="btn btn-primary" onclick="saveReimb()">Save Reimbursement</button><button class="btn btn-secondary" onclick="closeModal('reimModal')">Cancel</button></div>
+  </div>
+</div>
+
+<!-- Bonus Modal -->
+<div class="modal-overlay" id="bonusModal">
+  <div class="modal">
+    <div class="modal-head"><h3>Add Bonus / Payout</h3><button class="modal-close" onclick="closeModal('bonusModal')">✕</button></div>
+    <input type="hidden" id="bonusEditIdx">
+    <div class="form-grid">
+      <div class="form-group"><label>Email *</label><input id="bonusEmail" type="email" list="bonusEmailList"><datalist id="bonusEmailList"></datalist></div>
+      <div class="form-group"><label>Full Name *</label><input id="bonusName" placeholder="Full name"></div>
+      <div class="form-group"><label>Category *</label><input id="bonusCat" list="bonusCatList" placeholder="e.g. EX Milestone Expenditures"><datalist id="bonusCatList"></datalist></div>
+      <div class="form-group"><label>Designation</label><input id="bonusDes" placeholder="e.g. Finance Coordinator"></div>
+      <div class="form-group"><label>Description</label><input id="bonusDesc" placeholder="e.g. 1st Year Anniversary"></div>
+      <div class="form-group"><label>Amount *</label><input id="bonusAmount" type="number" step="0.01"></div>
+      <div class="form-group"><label>Currency</label><select id="bonusCurr"><option>PHP</option><option>EUR</option><option>USD</option><option>SGD</option></select></div>
+      <div class="form-group"><label>Payout Date</label><input id="bonusDate" type="date"></div>
+    </div>
+    <div class="form-actions"><button class="btn btn-primary" onclick="saveBonus()">Save Bonus</button><button class="btn btn-secondary" onclick="closeModal('bonusModal')">Cancel</button></div>
+  </div>
+</div>
+
+<!-- Tracker Modal -->
+<div class="modal-overlay" id="trackerModal">
+  <div class="modal">
+    <div class="modal-head"><h3>Add / Update Tracker Entry</h3><button class="modal-close" onclick="closeModal('trackerModal')">✕</button></div>
+    <input type="hidden" id="trackerEditIdx">
+    <div class="form-grid">
+      <div class="form-group"><label>Person Name *</label><input id="trackerPerson" list="trackerPersonList" placeholder="Name (short)"><datalist id="trackerPersonList"></datalist></div>
+      <div class="form-group"><label>Type</label><select id="trackerType"><option>Salary</option><option>Commission</option></select></div>
+      <div class="form-group"><label>2019</label><input id="tracker2019" type="number" step="0.01" value="0"></div>
+      <div class="form-group"><label>2020</label><input id="tracker2020" type="number" step="0.01" value="0"></div>
+      <div class="form-group"><label>2021</label><input id="tracker2021" type="number" step="0.01" value="0"></div>
+      <div class="form-group"><label>2022</label><input id="tracker2022" type="number" step="0.01" value="0"></div>
+      <div class="form-group"><label>2023</label><input id="tracker2023" type="number" step="0.01" value="0"></div>
+      <div class="form-group"><label>2024</label><input id="tracker2024" type="number" step="0.01" value="0"></div>
+      <div class="form-group"><label>2025</label><input id="tracker2025" type="number" step="0.01" value="0"></div>
+    </div>
+    <div class="form-actions"><button class="btn btn-primary" onclick="saveTracker()">Save</button><button class="btn btn-secondary" onclick="closeModal('trackerModal')">Cancel</button></div>
+  </div>
+</div>
+
+<!-- CB Modal -->
+<div class="modal-overlay" id="cbModal">
+  <div class="modal">
+    <div class="modal-head"><h3>Add Compensation Policy</h3><button class="modal-close" onclick="closeModal('cbModal')">✕</button></div>
+    <input type="hidden" id="cbEditIdx">
+    <div class="form-grid">
+      <div class="form-group"><label>Eligibility</label><input id="cbElig" placeholder="e.g. All, PH employees, Head of Sales"></div>
+      <div class="form-group"><label>Department</label><input id="cbDept" placeholder="e.g. Human Resources, Sales"></div>
+      <div class="form-group"><label>Bonus Name *</label><input id="cbName" placeholder="e.g. Anniversary Bonus"></div>
+      <div class="form-group"><label>Bonus Amount (PHP)</label><input id="cbAmtPHP" type="number" step="0.01" value="0"></div>
+      <div class="form-group"><label>Bonus Amount (EUR)</label><input id="cbAmtEUR" type="number" step="0.01" value="0"></div>
+      <div class="form-group"><label>Distribution</label><input id="cbDist" placeholder="e.g. Monthly, Bi-Weekly, Quarterly"></div>
+      <div class="form-group"><label>Discontinued Date</label><input id="cbDiscDate" type="date"></div>
+    </div>
+    <div class="form-group" style="margin-bottom:14px"><label>Qualifier / Conditions / Terms</label><textarea id="cbTerms"></textarea></div>
+    <div class="form-group" style="margin-bottom:14px"><label>Notes</label><textarea id="cbNotes"></textarea></div>
+    <div class="form-actions"><button class="btn btn-primary" onclick="saveCB()">Save Policy</button><button class="btn btn-secondary" onclick="closeModal('cbModal')">Cancel</button></div>
+  </div>
+</div>
+
+<!-- DBT Modal -->
+<div class="modal-overlay" id="dbtModal">
+  <div class="modal">
+    <div class="modal-head"><h3>Add DBT Record</h3><button class="modal-close" onclick="closeModal('dbtModal')">✕</button></div>
+    <input type="hidden" id="dbtEditIdx">
+    <div class="form-grid">
+      <div class="form-group"><label>Email *</label><input id="dbtEmail" type="email"></div>
+      <div class="form-group"><label>Current Salary</label><input id="dbtSalary" type="number" step="0.01"></div>
+      <div class="form-group"><label>Currency</label><select id="dbtCurr"><option>PHP</option><option>EUR</option><option>USD</option><option>SGD</option></select></div>
+    </div>
+    <div class="form-actions"><button class="btn btn-primary" onclick="saveDBT()">Save</button><button class="btn btn-secondary" onclick="closeModal('dbtModal')">Cancel</button></div>
+  </div>
+</div>
+
+<!-- FX Modal -->
+<div class="modal-overlay" id="fxModal">
+  <div class="modal">
+    <div class="modal-head"><h3>Add / Update FX Rate</h3><button class="modal-close" onclick="closeModal('fxModal')">✕</button></div>
+    <input type="hidden" id="fxEditIdx">
+    <div class="form-grid">
+      <div class="form-group"><label>Pair *</label><input id="fxPair" placeholder="e.g. USD to EUR"></div>
+      <div class="form-group"><label>Rate *</label><input id="fxRate" type="number" step="0.000001" placeholder="e.g. 0.84952"></div>
+      <div class="form-group"><label>Last Updated</label><input id="fxDate" type="date"></div>
+    </div>
+    <div class="form-actions"><button class="btn btn-primary" onclick="saveFX()">Save Rate</button><button class="btn btn-secondary" onclick="closeModal('fxModal')">Cancel</button></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ─────────── DATA STORE ───────────
+const KEYS = { emp:'pay_employees', pay:'pay_payroll', reimb:'pay_reimb', bonus:'pay_bonuses', tracker:'pay_tracker', cb:'pay_cb', dbt:'pay_dbt', fx:'pay_fx' };
+function load(k){ try{ return JSON.parse(localStorage.getItem(KEYS[k]))||[] }catch{ return [] } }
+function save(k,d){ localStorage.setItem(KEYS[k], JSON.stringify(d)) }
+
+// ─────────── SEED DATA ───────────
+function seedIfEmpty(){
+  if(load('emp').length===0){
+    const emps=[
+      {name:'Jessica Circi',email:'jc@ortusclub.com',rate:5632.64,currency:'EUR',startDate:'2017-10-03',notes:''},
+      {name:'Maria Yoko Ann Rodriguez Manzano',email:'yoko@ortusclub.com',rate:5425,currency:'SGD',startDate:'2018-02-26',notes:''},
+      {name:'Neil Pickford',email:'neil@ortusclub.com',rate:2700,currency:'USD',startDate:'2020-01-06',notes:''},
+      {name:'Hannah Hodkinson',email:'hannah@ortusclub.com',rate:4400,currency:'USD',startDate:'2020-03-12',notes:''},
+      {name:'Marcella Tortora',email:'marcella@ortusclub.com',rate:3300,currency:'EUR',startDate:'2020-09-28',notes:''},
+      {name:'Lorna Davidson',email:'lorna@m-club.co',rate:3500,currency:'EUR',startDate:'2021-02-22',notes:''},
+      {name:'Austen Clark',email:'austen@ortusclub.com',rate:2990,currency:'EUR',startDate:'2021-04-06',notes:''},
+      {name:'Driton Hyseni',email:'driton@ortusclub.com',rate:2520,currency:'EUR',startDate:'2021-09-27',notes:''},
+      {name:'Danielle Annah Honasan',email:'dannah@m-club.co',rate:37500,currency:'PHP',startDate:'2022-01-03',notes:''},
+      {name:'Flandra Bislimi',email:'flandra@ortusclub.com',rate:2500,currency:'EUR',startDate:'2022-01-31',notes:''},
+      {name:'Diedona Llabjani',email:'diedona@ortusclub.com',rate:1236.4,currency:'EUR',startDate:'2022-01-31',notes:''},
+      {name:'Bardh Limani',email:'bardh@ortusclub.com',rate:1000,currency:'EUR',startDate:'2022-03-21',notes:''},
+      {name:'Mi Hyun Kim',email:'mishy@ortusclub.com',rate:42768,currency:'PHP',startDate:'2022-07-04',notes:''},
+      {name:'Andrea Paolacci',email:'andrea@ortusclub.com',rate:2800,currency:'EUR',startDate:'2022-07-04',notes:'IT16758641001'},
+      {name:'Bleron Spahiu',email:'bleron@ortusclub.com',rate:1211.76,currency:'EUR',startDate:'2022-07-18',notes:''},
+      {name:'Medina Bilalli',email:'medina@ortusclub.com',rate:1020,currency:'EUR',startDate:'2022-07-18',notes:''},
+      {name:'Antigona Brahimi',email:'antigona.brahimi@ortusclub.com',rate:1265,currency:'EUR',startDate:'2022-08-15',notes:''},
+      {name:'Ernes Rama',email:'ernes.rama@ortusclub.com',rate:1080,currency:'EUR',startDate:'2022-08-15',notes:''},
+      {name:'Marian Deypalan',email:'aria@drawsstudio.com',rate:30000,currency:'PHP',startDate:'2022-09-05',notes:''},
+      {name:'Gentrit Bislimi',email:'gentrit.bislimi@ortusclub.com',rate:1400,currency:'EUR',startDate:'2022-09-26',notes:''},
+      {name:'Andrrim Krenzi',email:'andrrim.krenzi@ortusclub.com',rate:1320,currency:'EUR',startDate:'2022-09-26',notes:''},
+      {name:'Mariana De La Torre Mosqueda',email:'mariana.delatorre@ortusclub.com',rate:1300,currency:'USD',startDate:'2022-10-31',notes:''},
+      {name:'Diana Laura Gutierrez Lara',email:'diana.gutierrez@ortusclub.com',rate:825,currency:'USD',startDate:'2022-11-28',notes:''},
+      {name:'Elma Hasani',email:'elma.hasani@ortusclub.com',rate:862.5,currency:'EUR',startDate:'2023-02-06',notes:''},
+      {name:'Sara Mehmeti',email:'sara.mehmeti@ortusclub.com',rate:1150,currency:'EUR',startDate:'2023-02-06',notes:''},
+      {name:'Fatbardha Gashi',email:'fatbardha@m-club.co',rate:1075,currency:'EUR',startDate:'2023-03-20',notes:''},
+      {name:'Nushe Himaj',email:'nushe.himaj@ortusclub.com',rate:1152.17,currency:'EUR',startDate:'2023-05-02',notes:''},
+      {name:'Haris Fejza',email:'haris.fejza@ortusclub.com',rate:846.81,currency:'EUR',startDate:'2023-05-02',notes:''},
+      {name:'Maria Luisa Florian Landa',email:'luisa.florian@ortusclub.com',rate:950,currency:'USD',startDate:'2023-06-09',notes:''},
+      {name:'Vlera Zejnullahi',email:'vlera.zejnullahi@ortusclub.com',rate:600,currency:'EUR',startDate:'2023-06-19',notes:''},
+      {name:'Endrit Bislimi',email:'endrit.bislimi@ortusclub.com',rate:642,currency:'EUR',startDate:'2023-06-19',notes:''},
+      {name:'Betim Raka',email:'betim.raka@ortusclub.com',rate:630,currency:'EUR',startDate:'2023-06-19',notes:''},
+      {name:'Mozes Janse',email:'mozes.janse@ortusclub.com',rate:2700,currency:'EUR',startDate:'2023-09-11',notes:''},
+      {name:'Blinera Rexhepi',email:'blinera.rexhepi@ortusclub.com',rate:650,currency:'EUR',startDate:'2023-09-18',notes:''},
+      {name:'Alma Mustafa',email:'alma.mustafa@ortusclub.com',rate:640,currency:'EUR',startDate:'2023-09-18',notes:''},
+      {name:'Otero Finiti',email:'otero@ortusclub.com',rate:2500,currency:'EUR',startDate:'2023-09-25',notes:'No Partita Iva'},
+      {name:'Vigan Raka',email:'vigan.raka@ortusclub.com',rate:930,currency:'EUR',startDate:'2023-10-16',notes:''},
+      {name:'Gresa Grajqevci',email:'gresa.grajqevci@ortusclub.com',rate:901,currency:'EUR',startDate:'2023-10-16',notes:''},
+      {name:'Naren Hassani',email:'naren.hassani@ortusclub.com',rate:2500,currency:'EUR',startDate:'2023-10-16',notes:''},
+      {name:'Hansel Del Rosario',email:'hansel@ortusdraws.com',rate:60000,currency:'PHP',startDate:'2023-11-13',notes:''},
+      {name:'Anna Beatrice Marie Crisostomo',email:'beatrice.crisostomo@ortusclub.com',rate:785.46,currency:'EUR',startDate:'2024-01-08',notes:''},
+      {name:'Klara Dragaj',email:'klara.d@ortusclub.com',rate:769.82,currency:'EUR',startDate:'2024-02-05',notes:''},
+      {name:'Qendresa Jashari',email:'qendresa.j@ortusclub.com',rate:800.9,currency:'EUR',startDate:'2024-02-05',notes:''},
+      {name:'Agnesa Gashi',email:'agnesa.g@ortusclub.com',rate:600,currency:'EUR',startDate:'2024-03-18',notes:''},
+      {name:'Filloreta Ferati',email:'filloreta.f@ortusclub.com',rate:660,currency:'EUR',startDate:'2024-03-18',notes:''},
+      {name:'Flutura Ibrahimi',email:'fluturai@ortusclub.com',rate:745.2,currency:'EUR',startDate:'2024-05-13',notes:''},
+      {name:'Inés Smith Garcia',email:'ines@ortusclub.com',rate:2500,currency:'EUR',startDate:'2024-06-03',notes:'No Partita Iva'},
+      {name:'Wessel Hijman',email:'wessel@m-club.co',rate:2250,currency:'EUR',startDate:'2024-06-17',notes:''},
+      {name:'Eugenia Vitali',email:'eugenia@ortusclub.com',rate:3300,currency:'EUR',startDate:'2024-06-25',notes:''},
+      {name:'Flavia Cesare Pintorno',email:'flaviap@ortusclub.com',rate:2250,currency:'EUR',startDate:'2024-07-15',notes:''},
+      {name:'Zeynep Kantav',email:'zeynep@ortusclub.com',rate:2332.8,currency:'EUR',startDate:'2024-07-30',notes:''},
+      {name:'Christina Foran',email:'christina@ortusclub.com',rate:2700,currency:'EUR',startDate:'',notes:''},
+      {name:'Jovana Perosevic',email:'jovana@ortusclub.com',rate:2247.2,currency:'EUR',startDate:'2024-09-03',notes:''},
+      {name:'Adriane Gruda',email:'adriana@ortusclub.com',rate:712.8,currency:'EUR',startDate:'2025-01-27',notes:''},
+      {name:'Dafina Hajdaraj',email:'dafina@ortusclub.com',rate:712.8,currency:'EUR',startDate:'2025-01-27',notes:''},
+      {name:'Elion Maksutaj',email:'elion@ortusclub.com',rate:636,currency:'EUR',startDate:'2025-01-27',notes:''},
+      {name:'Elita Ahmeti',email:'elita@ortusclub.com',rate:686.88,currency:'EUR',startDate:'2025-01-27',notes:''},
+      {name:'Genta Limani',email:'genta.limani@ortusclub.com',rate:600,currency:'EUR',startDate:'2025-01-27',notes:''},
+      {name:'Rayan Saker',email:'rayan@ortusclub.com',rate:1700,currency:'EUR',startDate:'2025-05-05',notes:''},
+      {name:'Benedetta Annecchini',email:'benedetta@m-club.co',rate:2500,currency:'EUR',startDate:'2025-04-10',notes:''},
+      {name:'Marigona Aliaj',email:'marigona@ortusclub.com',rate:950,currency:'EUR',startDate:'2024-10-01',notes:''},
+      {name:'Antonio Varlese',email:'antonio@ortusclub.com',rate:2875,currency:'EUR',startDate:'',notes:''},
+      {name:'Milena Fuda',email:'milena@ortusclub.com',rate:2000,currency:'EUR',startDate:'',notes:''},
+    ];
+    save('emp',emps);
+  }
+
+  if(load('fx').length===0){
+    save('fx',[
+      {pair:'USD to SGD',rate:1.27101,updated:'2026-04-21'},
+      {pair:'USD to EUR',rate:0.84952,updated:'2026-04-21'},
+      {pair:'USD to PHP',rate:59.861,updated:'2026-04-21'},
+      {pair:'USD to USD',rate:1,updated:'2026-04-21'},
+    ]);
+  }
+
+  if(load('cb').length===0){
+    save('cb',[
+      {eligibility:'All',department:'Human Resources',bonusName:'Anniversary Bonus',terms:'Has hit work anniversary',amtPHP:5000,amtEUR:86,distribution:'Milestone',discDate:'',notes:''},
+      {eligibility:'PH employees',department:'Human Resources',bonusName:'Transportation Allowance',terms:'Per day required and complied office days',amtPHP:200,amtEUR:0,distribution:'Bi-Weekly',discDate:'',notes:''},
+      {eligibility:'All',department:'Human Resources',bonusName:'Team Hangout Allowance',terms:'Provided per head in a team; must be requested and approved by HR team',amtPHP:1000,amtEUR:20,distribution:'Quarterly; Q1/Q3',discDate:'',notes:''},
+      {eligibility:'All; Non-sales',department:'Sales',bonusName:'Internal Referral Bonus',terms:'Referred a new client to Sales team not already existing in Hubspot',amtPHP:10000,amtEUR:180,distribution:'Monthly; Upon payment and execution',discDate:'',notes:''},
+      {eligibility:'Head of Sales',department:'Sales',bonusName:'Override commission',terms:'For all projects closed, executed, and paid',amtPHP:0.01,amtEUR:0.01,distribution:'Monthly',discDate:'',notes:''},
+      {eligibility:'Head of Sales',department:'Sales',bonusName:'Override commission - Deflated',terms:'Paid initially before EoQ until sales target has been reached',amtPHP:0.0084,amtEUR:0.0084,distribution:'Monthly',discDate:'',notes:'Effective January 1st, 2025'},
+      {eligibility:'Head of Sales',department:'Sales',bonusName:'Override commission - Inflated',terms:'Paid out when target has been reached, all projects have been executed and paid',amtPHP:0.015,amtEUR:0.015,distribution:'Monthly',discDate:'',notes:'Effective January 1st, 2025'},
+    ]);
+  }
+
+  if(load('dbt').length===0){
+    save('dbt',[
+      {email:'angela@ortusclub.com',salary:30000,currency:'PHP'},
+      {email:'chase@ortusclub.com',salary:20000,currency:'PHP'},
+      {email:'anica@ortusclub.com',salary:25000,currency:'PHP'},
+      {email:'maki@ortusclub.com',salary:35000,currency:'PHP'},
+      {email:'kathrina@ortusclub.com',salary:25000,currency:'PHP'},
+      {email:'john@ortusclub.com',salary:22000,currency:'PHP'},
+      {email:'jinia@ortusclub.com',salary:22000,currency:'PHP'},
+      {email:'zoe@ortusclub.com',salary:22000,currency:'PHP'},
+    ]);
+  }
+
+  if(load('tracker').length===0){
+    save('tracker',[
+      {person:'Ciara',type:'Salary',y2019:0,y2020:1748,y2021:4598,y2022:10944,y2023:11354.4,y2024:12585.6,y2025:8800.8},
+      {person:'Ciara',type:'Commission',y2019:0,y2020:0,y2021:0,y2022:32272.85,y2023:44306.53,y2024:85565.1,y2025:51180.47},
+      {person:'Neil',type:'Salary',y2019:0,y2020:12000,y2021:15200,y2022:21600,y2023:21600,y2024:21600,y2025:20000},
+      {person:'Neil',type:'Commission',y2019:0,y2020:4381,y2021:32237.3,y2022:80467.24,y2023:79766.57,y2024:70448.23,y2025:81175.55},
+      {person:'Sab',type:'Salary',y2019:5345.175,y2020:8111.1,y2021:8111.1,y2022:10792,y2023:11229,y2024:11514,y2025:7963.85},
+      {person:'Sab',type:'Commission',y2019:0,y2020:4710,y2021:47670.61,y2022:92386.17,y2023:74517.32,y2024:71789.52,y2025:62959},
+      {person:'Marcella',type:'Salary',y2019:0,y2020:7216.488,y2021:21649.464,y2022:26761.143,y2023:34278.318,y2024:37285.188,y2025:24856.792},
+      {person:'Marcella',type:'Commission',y2019:0,y2020:0,y2021:22996.59,y2022:44498.61,y2023:60661.29,y2024:100647.45,y2025:75673.54},
+      {person:'Yoko',type:'Salary',y2019:17760,y2020:17760,y2021:17760,y2022:42050.5,y2023:48174,y2024:48174,y2025:12043.5},
+      {person:'Yoko',type:'Commission',y2019:15769.1,y2020:68206.81,y2021:126646.76,y2022:252218.23,y2023:155335.14,y2024:165023.59,y2025:62192.2},
+    ]);
+  }
+
+  if(load('bonus').length===0){
+    save('bonus',[
+      {email:'benedict@ortusclub.com',name:'James Benedict Armiro',category:'EX Milestone Expenditures',designation:'Finance Coordinator',description:'1st Year Anniversary',amount:10000,currency:'PHP',payoutDate:'2023-01-25'},
+      {email:'rodolph@ortusclub.com',name:'Rodolph Joseph Cannu',category:'EX Milestone Expenditures',designation:'Research Coordinator',description:'1st Year Anniversary',amount:10000,currency:'PHP',payoutDate:'2023-01-25'},
+      {email:'neil@ortusclub.com',name:'Neil Pickford',category:'EX Milestone Expenditures',designation:'Sales Director',description:'2nd Year Anniversary',amount:5000,currency:'PHP',payoutDate:'2023-01-25'},
+      {email:'medina@ortusclub.com',name:'Medina Bilalli',category:'Commissions',designation:'Project Coordinator',description:'GD Commissions',amount:45,currency:'EUR',payoutDate:'2023-01-25'},
+      {email:'bleron@ortusclub.com',name:'Bleron Spahiu',category:'Commissions',designation:'Project Coordinator',description:'GD Commissions',amount:45,currency:'EUR',payoutDate:'2023-01-25'},
+      {email:'bardh@ortusclub.com',name:'Bardh Limani',category:'Commissions',designation:'Project Coordinator',description:'GD Commissions',amount:165,currency:'EUR',payoutDate:'2023-01-25'},
+      {email:'diedona@ortusclub.com',name:'Diedona Llabjani',category:'Commissions',designation:'Assistant Team Lead',description:'GD Commissions',amount:950,currency:'EUR',payoutDate:'2023-01-25'},
+    ]);
+  }
+
+  if(load('pay').length===0){
+    save('pay',[
+      {name:'Petra Barna',email:'petra@ortusclub.com',startPeriod:'2020-08-01',endPeriod:'2020-08-31',currency:'USD',rate:3000,nightDiff:0,adjustments:0,deductions:0,reimbursements:0,salary:3000,commUSD:1529.2,commLC:1657.2,total:4657.2,dealTag:'CLF_US\nBVOY_EMEA (128.00 USD)\nAKAM_INDO (1049.00 USD)',notes:'',receipt:'https://drive.google.com/file/d/1-qA6neYAAcWFvNf43JJcgin1sepi7gnz/view?usp=sharing',datePaid:'2021-01-26',gdComms:0,overhead:0},
+      {name:'Marcella Tortora',email:'marcella@ortusclub.com',startPeriod:'2020-12-21',endPeriod:'2021-01-15',currency:'EUR',rate:1800,nightDiff:0,adjustments:0,deductions:0,reimbursements:0,salary:1800,commUSD:0,commLC:0,total:1800,dealTag:'-',notes:'',receipt:'',datePaid:'2021-01-25',gdComms:0,overhead:0},
+      {name:'Hannah Hodkinson',email:'hannah@ortusclub.com',startPeriod:'2021-01-01',endPeriod:'2021-01-31',currency:'USD',rate:3000,nightDiff:0,adjustments:0,deductions:0,reimbursements:0,salary:3000,commUSD:0,commLC:0,total:3000,dealTag:'-',notes:'',receipt:'',datePaid:'2021-01-26',gdComms:0,overhead:0},
+      {name:'Neil Pickford',email:'neil@ortusclub.com',startPeriod:'2021-01-01',endPeriod:'2021-01-31',currency:'USD',rate:1000,nightDiff:0,adjustments:0,deductions:0,reimbursements:0,salary:1000,commUSD:1629,commLC:1629,total:2629,dealTag:'HPE_PH (250.00 USD)\nAWS_GLBL (50.00 USD)',notes:'',receipt:'',datePaid:'2021-01-25',gdComms:0,overhead:0},
+    ]);
+  }
+}
+
+// ─────────── HELPERS ───────────
+const fmt = (n, d=2) => n==null||isNaN(n) ? '—' : parseFloat(n).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+const fmtDate = d => d ? d.substring(0,10) : '—';
+function currBadge(c){ return `<span class="badge badge-${(c||'').toLowerCase()}">${c||'?'}</span>`; }
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.style.display='block'; setTimeout(()=>t.style.display='none',2400); }
+
+function getFxRate(from, to, rates){
+  if(from===to) return 1;
+  // Convert from → USD first, then USD → to
+  const toUSD = { 'USD':1 };
+  const fromUSD = { 'USD':1 };
+  rates.forEach(r=>{
+    const m = r.pair.match(/(\w+)\s*to\s*(\w+)/i);
+    if(m){ const [,f,t]=m; if(f==='USD') fromUSD[t]=r.rate; }
+  });
+  // Rate stored as USD → X, so to get X → USD: 1/rate
+  const fromToUSD = from==='USD' ? 1 : (fromUSD[from] ? 1/fromUSD[from] : 1);
+  const usdToTo = to==='USD' ? 1 : (fromUSD[to] || 1);
+  return fromToUSD * usdToTo;
+}
+
+function toUSD(amount, currency){
+  const rates = load('fx');
+  const usdRates = {'USD':1};
+  rates.forEach(r=>{ const m=r.pair.match(/USD\s*to\s*(\w+)/i); if(m) usdRates[m[1]]=parseFloat(r.rate); });
+  const c = currency.toUpperCase();
+  if(c==='USD') return amount;
+  if(usdRates[c]) return amount / usdRates[c];
+  return amount;
+}
+
+// ─────────── TAB NAVIGATION ───────────
+function showTab(id){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if(id==='dashboard') refreshDashboard();
+  if(id==='employees') renderEmployees();
+  if(id==='payroll') renderPayroll();
+  if(id==='reimbursements') renderReimb();
+  if(id==='bonuses') renderBonuses();
+  if(id==='tracker') renderTracker();
+  if(id==='cb') renderCB();
+  if(id==='dbt') renderDBT();
+  if(id==='conversions') renderFX();
+}
+
+// ─────────── MODAL ───────────
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{ if(e.target===o) o.classList.remove('open'); }));
+
+// ─────────── DASHBOARD ───────────
+function refreshDashboard(){
+  const emps = load('emp'), pays = load('pay'), reimbs = load('reimb'), bonuses = load('bonus');
+
+  const totalEmps = emps.length;
+  const totalPayroll = pays.reduce((s,p)=>s+toUSD(+p.total||0,p.currency||'USD'),0);
+  const totalReimb = reimbs.reduce((s,r)=>s+toUSD(+r.amount||0,r.origCurrency||r.currency||'USD'),0);
+  const totalBonus = bonuses.reduce((s,b)=>s+toUSD(+b.amount||0,b.currency||'USD'),0);
+
+  // Monthly salary estimate from current employees
+  const monthlyCost = emps.reduce((s,e)=>s+toUSD(+e.rate||0,e.currency||'USD'),0);
+
+  const stats = [
+    {label:'Total Employees',value:totalEmps,sub:'In registry',color:'var(--accent)'},
+    {label:'All-time Payroll (USD)',value:'$'+fmt(totalPayroll,0),sub:'All entries combined',color:'var(--accent2)'},
+    {label:'Est. Monthly Cost (USD)',value:'$'+fmt(monthlyCost,0),sub:'Based on current rates',color:'var(--accent3)'},
+    {label:'Total Reimbursements',value:'$'+fmt(totalReimb,0),sub:'All claims (USD equiv.)',color:'var(--accent4)'},
+    {label:'Bonuses Paid',value:'$'+fmt(totalBonus,0),sub:'All bonuses (USD equiv.)',color:'var(--green)'},
+    {label:'Payroll Entries',value:pays.length,sub:'Total log entries',color:'var(--text-mid)'},
+  ];
+
+  document.getElementById('dashStats').innerHTML = stats.map(s=>`
+    <div class="stat-card" style="--accent-color:${s.color}">
+      <div class="label">${s.label}</div>
+      <div class="value">${s.value}</div>
+      <div class="sub">${s.sub}</div>
+    </div>`).join('');
+
+  // Salary chart - top 12 employees by USD rate
+  const sorted = [...emps].sort((a,b)=>toUSD(+b.rate,b.currency)-toUSD(+a.rate,a.currency)).slice(0,12);
+  const maxVal = sorted[0] ? toUSD(+sorted[0].rate, sorted[0].currency) : 1;
+  document.getElementById('salaryChart').innerHTML = sorted.map(e=>{
+    const usd = toUSD(+e.rate, e.currency);
+    const pct = (usd/maxVal*100).toFixed(1);
+    const color = {EUR:'var(--accent2)',USD:'var(--green)',PHP:'var(--accent3)',SGD:'var(--accent4)'}[e.currency]||'var(--accent)';
+    return `<div class="chart-bar-row">
+      <div class="chart-bar-label">${e.name.split(' ')[0]}</div>
+      <div class="chart-bar-track"><div class="chart-bar-fill" style="width:${pct}%;background:${color}">$${fmt(usd,0)}</div></div>
+      <div class="chart-bar-val">${e.currency} ${fmt(+e.rate,0)}</div>
+    </div>`;
+  }).join('');
+
+  // Currency breakdown
+  const byCurr = {};
+  emps.forEach(e=>{ const c=e.currency||'USD'; if(!byCurr[c]) byCurr[c]={count:0,total:0}; byCurr[c].count++; byCurr[c].total+=+e.rate||0; });
+  document.getElementById('currencyBreakdown').innerHTML = Object.entries(byCurr).map(([c,v])=>`
+    <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);font-size:12px;">
+      <span>${currBadge(c)} ${v.count} employees</span>
+      <span style="color:var(--text-mid)">${fmt(v.total,0)} ${c}/mo</span>
+    </div>`).join('');
+
+  // Recent payroll
+  const recent = [...pays].sort((a,b)=>new Date(b.datePaid||b.endPeriod)-new Date(a.datePaid||a.endPeriod)).slice(0,10);
+  document.getElementById('recentPayrollBody').innerHTML = recent.map(p=>`
+    <tr>
+      <td>${p.name}</td>
+      <td style="color:var(--text-dim)">${fmtDate(p.startPeriod)} → ${fmtDate(p.endPeriod)}</td>
+      <td>${fmt(+p.salary||0)}</td>
+      <td>${fmt(+p.commLC||0)}</td>
+      <td><strong>${fmt(+p.total||0)}</strong></td>
+      <td>${currBadge(p.currency)}</td>
+      <td style="color:var(--text-dim)">${fmtDate(p.datePaid)}</td>
+    </tr>`).join('') || '<tr><td colspan="7" class="empty">No payroll entries yet</td></tr>';
+}
+
+// ─────────── EMPLOYEES ───────────
+function renderEmployees(){
+  const q = (document.getElementById('empSearch').value||'').toLowerCase();
+  const cf = document.getElementById('empCurrFilter').value;
+  const emps = load('emp').filter(e=>{
+    if(cf && e.currency!==cf) return false;
+    if(q && !e.name?.toLowerCase().includes(q) && !e.email?.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  document.getElementById('empBody').innerHTML = emps.map((e,i)=>`
+    <tr>
+      <td><strong>${e.name}</strong></td>
+      <td style="color:var(--text-dim)">${e.email}</td>
+      <td><strong>${fmt(+e.rate||0)}</strong></td>
+      <td>${currBadge(e.currency)}</td>
+      <td style="color:var(--text-dim)">${fmtDate(e.startDate)}</td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis">${e.notes||''}</td>
+      <td><button class="edit-btn" onclick="editEmp(${i})">✎</button><button class="delete-btn" onclick="delEmp(${i})">✕</button></td>
+    </tr>`).join('') || '<tr><td colspan="7" class="empty">No employees found</td></tr>';
+}
+
+function editEmp(i){
+  const emps=load('emp'); const e=emps[i];
+  document.getElementById('empEditIdx').value=i;
+  document.getElementById('empModalTitle').textContent='Edit Employee';
+  document.getElementById('empName').value=e.name||'';
+  document.getElementById('empEmail').value=e.email||'';
+  document.getElementById('empRate').value=e.rate||'';
+  document.getElementById('empCurr').value=e.currency||'EUR';
+  document.getElementById('empStart').value=e.startDate||'';
+  document.getElementById('empNotes').value=e.notes||'';
+  openModal('empModal');
+}
+
+function saveEmployee(){
+  const idx=document.getElementById('empEditIdx').value;
+  const e={name:document.getElementById('empName').value.trim(),email:document.getElementById('empEmail').value.trim(),rate:parseFloat(document.getElementById('empRate').value)||0,currency:document.getElementById('empCurr').value,startDate:document.getElementById('empStart').value,notes:document.getElementById('empNotes').value.trim()};
+  if(!e.name||!e.email){ alert('Name and Email are required'); return; }
+  const emps=load('emp');
+  if(idx!=='') emps[+idx]=e; else emps.push(e);
+  save('emp',emps);
+  closeModal('empModal');
+  document.getElementById('empEditIdx').value='';
+  document.getElementById('empModalTitle').textContent='Add Employee';
+  ['empName','empEmail','empRate','empNotes'].forEach(id=>document.getElementById(id).value='');
+  renderEmployees();
+  toast('Employee saved ✓');
+}
+
+function delEmp(i){
+  if(!confirm('Delete this employee?')) return;
+  const emps=load('emp'); emps.splice(i,1); save('emp',emps); renderEmployees(); toast('Deleted');
+}
+
+// ─────────── PAYROLL ───────────
+function calcSalary(){
+  const rate=+document.getElementById('payRate').value||0;
+  const nd=+document.getElementById('payNightDiff').value||0;
+  const adj=+document.getElementById('payAdj').value||0;
+  const ded=+document.getElementById('payDed').value||0;
+  const reimb=+document.getElementById('payReimb').value||0;
+  const salary=rate+nd+adj-ded+reimb;
+  document.getElementById('paySalary').value=salary.toFixed(2);
+  const commLC=+document.getElementById('payCommLC').value||0;
+  document.getElementById('payTotal').value=(salary+commLC).toFixed(2);
+}
+['payRate','payNightDiff','payAdj','payDed','payReimb','payCommLC'].forEach(id=>{
+  const el=document.getElementById(id); if(el) el.addEventListener('input',calcSalary);
+});
+
+function renderPayroll(){
+  const q=(document.getElementById('paySearch').value||'').toLowerCase();
+  const yf=document.getElementById('payYearFilter').value;
+  const cf=document.getElementById('payCurrFilter').value;
+  const nf=document.getElementById('payNameFilter').value;
+  const pays=load('pay').filter(p=>{
+    if(cf && p.currency!==cf) return false;
+    if(nf && p.name!==nf) return false;
+    if(yf && !(p.startPeriod||'').startsWith(yf)) return false;
+    if(q && !p.name?.toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  // Populate year filter
+  const years=[...new Set(load('pay').map(p=>(p.startPeriod||'').substring(0,4)).filter(Boolean))].sort();
+  const ysel=document.getElementById('payYearFilter');
+  if(ysel.options.length<2){ years.forEach(y=>{ const o=document.createElement('option'); o.value=y; o.textContent=y; ysel.appendChild(o); }); }
+
+  // Populate name filter
+  const names=[...new Set(load('pay').map(p=>p.name).filter(Boolean))].sort();
+  const nsel=document.getElementById('payNameFilter');
+  if(nsel.options.length<2){ names.forEach(n=>{ const o=document.createElement('option'); o.value=n; o.textContent=n; nsel.appendChild(o); }); }
+  // Also for datalist
+  document.getElementById('payNameList').innerHTML=names.map(n=>`<option value="${n}">`).join('');
+
+  let totSal=0,totComm=0,totTotal=0;
+  document.getElementById('payBody').innerHTML = pays.map((p,i)=>{
+    // Auto-compute salary from components
+    const rate=+p.rate||0, nd=+p.nightDiff||0, adj=+p.adjustments||0, ded=+p.deductions||0, reimb=+p.reimbursements||0;
+    const computedSalary = rate+nd+adj-ded+reimb;
+    const commLC=+p.commLC||0;
+    const computedTotal = computedSalary+commLC;
+    totSal+=computedSalary; totComm+=+p.commUSD||0; totTotal+=computedTotal;
+    return `<tr>
+      <td><strong>${p.name}</strong></td>
+      <td style="color:var(--text-dim)">${fmtDate(p.startPeriod)}</td>
+      <td style="color:var(--text-dim)">${fmtDate(p.endPeriod)}</td>
+      <td>${currBadge(p.currency)}</td>
+      <td>${fmt(rate)}</td>
+      <td>${nd?fmt(nd):''}</td>
+      <td>${adj?fmt(adj):''}</td>
+      <td>${ded?`<span class="amount-neg">-${fmt(ded)}</span>`:''}</td>
+      <td>${reimb?`<span class="amount-pos">${fmt(reimb)}</span>`:''}</td>
+      <td><strong class="amount-pos">${fmt(computedSalary)}</strong></td>
+      <td>${+p.commUSD?fmt(+p.commUSD):''}</td>
+      <td>${commLC?fmt(commLC):''}</td>
+      <td><strong class="currency-${(p.currency||'').toLowerCase()}">${fmt(computedTotal)}</strong></td>
+      <td class="td-wrap" title="${p.dealTag||''}">${(p.dealTag||'').substring(0,30)}</td>
+      <td style="color:var(--text-dim)">${fmtDate(p.datePaid)}</td>
+      <td>${+p.gdComms?fmt(+p.gdComms):''}</td>
+      <td><button class="edit-btn" onclick="editPay(${load('pay').indexOf(p)})">✎</button><button class="delete-btn" onclick="delPay(${load('pay').indexOf(p)})">✕</button></td>
+    </tr>`;
+  }).join('')||'<tr><td colspan="17" class="empty">No payroll entries. Add one above.</td></tr>';
+
+  document.getElementById('payTotalSalary').innerHTML=`Salary: <strong>${fmt(totSal)}</strong>`;
+  document.getElementById('payTotalComm').innerHTML=`Comm USD: <strong>${fmt(totComm)}</strong>`;
+  document.getElementById('payTotalTotal').innerHTML=`Total: <strong class="amount-pos">${fmt(totTotal)}</strong>`;
+}
+
+function editPay(i){
+  const pays=load('pay'), p=pays[i];
+  document.getElementById('payEditIdx').value=i;
+  document.getElementById('payModalTitle').textContent='Edit Payroll Entry';
+  document.getElementById('payName').value=p.name||'';
+  document.getElementById('payEmail').value=p.email||'';
+  document.getElementById('payStart').value=p.startPeriod||'';
+  document.getElementById('payEnd').value=p.endPeriod||'';
+  document.getElementById('payCurr').value=p.currency||'EUR';
+  document.getElementById('payRate').value=p.rate||0;
+  document.getElementById('payNightDiff').value=p.nightDiff||0;
+  document.getElementById('payAdj').value=p.adjustments||0;
+  document.getElementById('payDed').value=p.deductions||0;
+  document.getElementById('payReimb').value=p.reimbursements||0;
+  document.getElementById('payCommUSD').value=p.commUSD||0;
+  document.getElementById('payCommLC').value=p.commLC||0;
+  document.getElementById('payGDComms').value=p.gdComms||0;
+  document.getElementById('payDatePaid').value=p.datePaid||'';
+  document.getElementById('payDealTag').value=p.dealTag||'';
+  document.getElementById('payNotes').value=p.notes||'';
+  document.getElementById('payReceipt').value=p.receipt||'';
+  document.getElementById('payOverhead').value=p.overhead||0;
+  calcSalary();
+  openModal('payModal');
+}
+
+function savePayroll(){
+  const idx=document.getElementById('payEditIdx').value;
+  const rate=parseFloat(document.getElementById('payRate').value)||0;
+  const nd=parseFloat(document.getElementById('payNightDiff').value)||0;
+  const adj=parseFloat(document.getElementById('payAdj').value)||0;
+  const ded=parseFloat(document.getElementById('payDed').value)||0;
+  const reimb=parseFloat(document.getElementById('payReimb').value)||0;
+  const commUSD=parseFloat(document.getElementById('payCommUSD').value)||0;
+  const commLC=parseFloat(document.getElementById('payCommLC').value)||0;
+  const salary=rate+nd+adj-ded+reimb;
+  const total=salary+commLC;
+  const p={
+    name:document.getElementById('payName').value.trim(),email:document.getElementById('payEmail').value.trim(),
+    startPeriod:document.getElementById('payStart').value,endPeriod:document.getElementById('payEnd').value,
+    currency:document.getElementById('payCurr').value,rate,nightDiff:nd,adjustments:adj,deductions:ded,reimbursements:reimb,
+    salary,commUSD,commLC,total,gdComms:parseFloat(document.getElementById('payGDComms').value)||0,
+    datePaid:document.getElementById('payDatePaid').value,dealTag:document.getElementById('payDealTag').value,
+    notes:document.getElementById('payNotes').value,receipt:document.getElementById('payReceipt').value,
+    overhead:parseFloat(document.getElementById('payOverhead').value)||0
+  };
+  if(!p.name){ alert('Name is required'); return; }
+  const pays=load('pay');
+  if(idx!=='') pays[+idx]=p; else pays.push(p);
+  save('pay',pays);
+  closeModal('payModal');
+  document.getElementById('payEditIdx').value='';
+  document.getElementById('payModalTitle').textContent='Add Payroll Entry';
+  renderPayroll();
+  toast('Payroll entry saved ✓');
+}
+
+function delPay(i){
+  if(!confirm('Delete this payroll entry?')) return;
+  const pays=load('pay'); pays.splice(i,1); save('pay',pays); renderPayroll(); toast('Deleted');
+}
+
+// ─────────── REIMB ───────────
+function renderReimb(){
+  const q=(document.getElementById('reimSearch').value||'').toLowerCase();
+  const cf=document.getElementById('reimCatFilter').value;
+  const pf=document.getElementById('reimPaidFilter').value;
+  const emps=load('emp');
+  document.getElementById('reimEmailList').innerHTML=emps.map(e=>`<option value="${e.email}">`).join('');
+  const reimbs=load('reimb').filter(r=>{
+    if(cf && r.category!==cf) return false;
+    if(pf && r.paid!==pf) return false;
+    if(q && !r.email?.toLowerCase().includes(q) && !r.description?.toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  let totByPaid={Y:0,N:0};
+  document.getElementById('reimBody').innerHTML = reimbs.map((r,i)=>{
+    const computedTotal=(+r.amount||0)*(+r.exchRate||1);
+    if(r.paid==='Y') totByPaid.Y+=computedTotal; else totByPaid.N+=computedTotal;
+    return `<tr>
+      <td style="color:var(--text-dim)">${fmtDate(r.date)}</td>
+      <td>${r.email}</td>
+      <td><span class="tag">${r.category||''}</span></td>
+      <td class="td-wrap" title="${r.description||''}">${r.description||''}</td>
+      <td><strong>${fmt(+r.amount||0)}</strong></td>
+      <td>${currBadge(r.origCurrency)}</td>
+      <td style="color:var(--text-dim)">${r.exchRate||1}</td>
+      <td><strong>${fmt(computedTotal)}</strong></td>
+      <td>${r.projectCode?`<span class="tag">${r.projectCode}</span>`:''}</td>
+      <td><span class="badge ${r.paid==='Y'?'badge-paid':'badge-unpaid'}">${r.paid==='Y'?'Paid':'Unpaid'}</span></td>
+      <td>${r.receiptLink?`<a href="${r.receiptLink}" target="_blank" style="color:var(--accent2);font-size:10px">View</a>`:''}</td>
+      <td><button class="edit-btn" onclick="editReimb(${load('reimb').indexOf(r)})">✎</button><button class="delete-btn" onclick="delReimb(${load('reimb').indexOf(r)})">✕</button></td>
+    </tr>`;
+  }).join('')||'<tr><td colspan="12" class="empty">No reimbursements found</td></tr>';
+
+  document.getElementById('reimTotals').innerHTML=`
+    <span class="amount-pos">Paid: <strong>${fmt(totByPaid.Y)}</strong></span>&nbsp;&nbsp;
+    <span class="amount-neg">Unpaid: <strong>${fmt(totByPaid.N)}</strong></span>&nbsp;&nbsp;
+    Total: <strong>${fmt(totByPaid.Y+totByPaid.N)}</strong>
+  `;
+}
+
+function calcReimbTotal(){
+  const amt=+document.getElementById('reimAmount').value||0;
+  const rate=+document.getElementById('reimExchRate').value||1;
+  document.getElementById('reimTotal').value=(amt*rate).toFixed(4);
+}
+['reimAmount','reimExchRate'].forEach(id=>{ const el=document.getElementById(id); if(el) el.addEventListener('input',calcReimbTotal); });
+
+function editReimb(i){
+  const reimbs=load('reimb'), r=reimbs[i];
+  document.getElementById('reimEditIdx').value=i;
+  document.getElementById('reimEmail').value=r.email||'';
+  document.getElementById('reimCat').value=r.category||'Other';
+  document.getElementById('reimSubcat').value=r.subcategory||'';
+  document.getElementById('reimDate').value=r.date||'';
+  document.getElementById('reimAmount').value=r.amount||'';
+  document.getElementById('reimOrigCurr').value=r.origCurrency||'PHP';
+  document.getElementById('reimEmpCurr').value=r.empCurrency||'PHP';
+  document.getElementById('reimExchRate').value=r.exchRate||1;
+  document.getElementById('reimDesc').value=r.description||'';
+  document.getElementById('reimProjectCode').value=r.projectCode||'';
+  document.getElementById('reimReceiptNum').value=r.receiptNum||'';
+  document.getElementById('reimPaid').value=r.paid||'N';
+  document.getElementById('reimReceiptLink').value=r.receiptLink||'';
+  calcReimbTotal();
+  openModal('reimModal');
+}
+
+function saveReimb(){
+  const idx=document.getElementById('reimEditIdx').value;
+  const amt=parseFloat(document.getElementById('reimAmount').value)||0;
+  const rate=parseFloat(document.getElementById('reimExchRate').value)||1;
+  const r={
+    email:document.getElementById('reimEmail').value.trim(),category:document.getElementById('reimCat').value,
+    subcategory:document.getElementById('reimSubcat').value,date:document.getElementById('reimDate').value,
+    amount:amt,origCurrency:document.getElementById('reimOrigCurr').value,empCurrency:document.getElementById('reimEmpCurr').value,
+    exchRate:rate,totalAmount:amt*rate,description:document.getElementById('reimDesc').value.trim(),
+    projectCode:document.getElementById('reimProjectCode').value.trim(),receiptNum:document.getElementById('reimReceiptNum').value.trim(),
+    paid:document.getElementById('reimPaid').value,receiptLink:document.getElementById('reimReceiptLink').value.trim()
+  };
+  if(!r.email){ alert('Email is required'); return; }
+  const reimbs=load('reimb');
+  if(idx!=='') reimbs[+idx]=r; else reimbs.push(r);
+  save('reimb',reimbs);
+  closeModal('reimModal');
+  document.getElementById('reimEditIdx').value='';
+  renderReimb();
+  toast('Reimbursement saved ✓');
+}
+
+function delReimb(i){
+  if(!confirm('Delete this reimbursement?')) return;
+  const reimbs=load('reimb'); reimbs.splice(i,1); save('reimb',reimbs); renderReimb(); toast('Deleted');
+}
+
+// ─────────── BONUSES ───────────
+function renderBonuses(){
+  const q=(document.getElementById('bonusSearch').value||'').toLowerCase();
+  const cf=document.getElementById('bonusCatFilter').value;
+  const emps=load('emp');
+  document.getElementById('bonusEmailList').innerHTML=emps.map(e=>`<option value="${e.email}">`).join('');
+  const bonuses=load('bonus');
+  // populate category filter
+  const cats=[...new Set(bonuses.map(b=>b.category).filter(Boolean))];
+  const csel=document.getElementById('bonusCatFilter');
+  const existing=[...csel.options].map(o=>o.value);
+  cats.forEach(c=>{ if(!existing.includes(c)){ const o=document.createElement('option'); o.value=c; o.textContent=c; csel.appendChild(o); } });
+  document.getElementById('bonusCatList').innerHTML=cats.map(c=>`<option value="${c}">`).join('');
+
+  const filtered=bonuses.filter(b=>{
+    if(cf && b.category!==cf) return false;
+    if(q && !b.email?.toLowerCase().includes(q) && !b.name?.toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  const totals={};
+  document.getElementById('bonusBody').innerHTML = filtered.map((b,i)=>{
+    const c=b.currency||'PHP';
+    if(!totals[c]) totals[c]=0; totals[c]+=+b.amount||0;
+    return `<tr>
+      <td style="color:var(--text-dim)">${b.email}</td>
+      <td><strong>${b.name}</strong></td>
+      <td><span class="tag">${b.category||''}</span></td>
+      <td style="color:var(--text-mid)">${b.designation||''}</td>
+      <td>${b.description||''}</td>
+      <td><strong>${fmt(+b.amount||0)}</strong></td>
+      <td>${currBadge(b.currency)}</td>
+      <td style="color:var(--text-dim)">${fmtDate(b.payoutDate)}</td>
+      <td><button class="edit-btn" onclick="editBonus(${bonuses.indexOf(b)})">✎</button><button class="delete-btn" onclick="delBonus(${bonuses.indexOf(b)})">✕</button></td>
+    </tr>`;
+  }).join('')||'<tr><td colspan="9" class="empty">No bonuses found</td></tr>';
+
+  document.getElementById('bonusTotals').innerHTML='Totals: '+Object.entries(totals).map(([c,t])=>`<strong>${fmt(t)}</strong> ${c}`).join(' | ');
+}
+
+function editBonus(i){
+  const bonuses=load('bonus'), b=bonuses[i];
+  document.getElementById('bonusEditIdx').value=i;
+  document.getElementById('bonusEmail').value=b.email||'';
+  document.getElementById('bonusName').value=b.name||'';
+  document.getElementById('bonusCat').value=b.category||'';
+  document.getElementById('bonusDes').value=b.designation||'';
+  document.getElementById('bonusDesc').value=b.description||'';
+  document.getElementById('bonusAmount').value=b.amount||'';
+  document.getElementById('bonusCurr').value=b.currency||'PHP';
+  document.getElementById('bonusDate').value=b.payoutDate||'';
+  openModal('bonusModal');
+}
+
+function saveBonus(){
+  const idx=document.getElementById('bonusEditIdx').value;
+  const b={email:document.getElementById('bonusEmail').value.trim(),name:document.getElementById('bonusName').value.trim(),category:document.getElementById('bonusCat').value.trim(),designation:document.getElementById('bonusDes').value.trim(),description:document.getElementById('bonusDesc').value.trim(),amount:parseFloat(document.getElementById('bonusAmount').value)||0,currency:document.getElementById('bonusCurr').value,payoutDate:document.getElementById('bonusDate').value};
+  const bonuses=load('bonus');
+  if(idx!=='') bonuses[+idx]=b; else bonuses.push(b);
+  save('bonus',bonuses);
+  closeModal('bonusModal');
+  document.getElementById('bonusEditIdx').value='';
+  renderBonuses();
+  toast('Bonus saved ✓');
+}
+
+function delBonus(i){
+  if(!confirm('Delete?')) return;
+  const bonuses=load('bonus'); bonuses.splice(i,1); save('bonus',bonuses); renderBonuses(); toast('Deleted');
+}
+
+// ─────────── TRACKER ───────────
+function renderTracker(){
+  const emps=load('emp');
+  document.getElementById('trackerPersonList').innerHTML=[...new Set(emps.map(e=>e.name.split(' ')[0]))].map(n=>`<option value="${n}">`).join('');
+  const rows=load('tracker');
+  const YEARS=['y2019','y2020','y2021','y2022','y2023','y2024','y2025'];
+  document.getElementById('trackerBody').innerHTML = rows.map((r,i)=>{
+    const total=YEARS.reduce((s,y)=>s+(+r[y]||0),0);
+    const row=YEARS.map(y=>`<td style="color:var(--text-mid)">${+r[y]?fmt(+r[y],0):''}</td>`).join('');
+    return `<tr class="${r.type==='Commission'?'highlight':''}">
+      <td><strong>${r.person}</strong></td>
+      <td><span class="tag">${r.type}</span></td>
+      ${row}
+      <td><strong class="amount-pos">${fmt(total,0)}</strong></td>
+      <td><button class="edit-btn" onclick="editTracker(${i})">✎</button><button class="delete-btn" onclick="delTracker(${i})">✕</button></td>
+    </tr>`;
+  }).join('')||'<tr><td colspan="11" class="empty">No tracker data</td></tr>';
+}
+
+function editTracker(i){
+  const rows=load('tracker'), r=rows[i];
+  document.getElementById('trackerEditIdx').value=i;
+  document.getElementById('trackerPerson').value=r.person||'';
+  document.getElementById('trackerType').value=r.type||'Salary';
+  ['2019','2020','2021','2022','2023','2024','2025'].forEach(y=>{ document.getElementById('tracker'+y).value=r['y'+y]||0; });
+  openModal('trackerModal');
+}
+
+function saveTracker(){
+  const idx=document.getElementById('trackerEditIdx').value;
+  const r={person:document.getElementById('trackerPerson').value.trim(),type:document.getElementById('trackerType').value};
+  ['2019','2020','2021','2022','2023','2024','2025'].forEach(y=>{ r['y'+y]=parseFloat(document.getElementById('tracker'+y).value)||0; });
+  const rows=load('tracker');
+  if(idx!=='') rows[+idx]=r; else rows.push(r);
+  save('tracker',rows);
+  closeModal('trackerModal');
+  document.getElementById('trackerEditIdx').value='';
+  renderTracker();
+  toast('Tracker saved ✓');
+}
+
+function delTracker(i){
+  if(!confirm('Delete?')) return;
+  const rows=load('tracker'); rows.splice(i,1); save('tracker',rows); renderTracker(); toast('Deleted');
+}
+
+// ─────────── CB ───────────
+function renderCB(){
+  const cbs=load('cb');
+  document.getElementById('cbBody').innerHTML = cbs.map((c,i)=>`
+    <tr>
+      <td><span class="tag">${c.eligibility||''}</span></td>
+      <td>${c.department||''}</td>
+      <td><strong>${c.bonusName}</strong></td>
+      <td class="td-wrap" title="${c.terms||''}">${(c.terms||'').substring(0,60)}${c.terms?.length>60?'…':''}</td>
+      <td>${c.amtPHP?fmt(+c.amtPHP):''}</td>
+      <td>${c.amtEUR?fmt(+c.amtEUR):''}</td>
+      <td style="color:var(--text-mid)">${c.distribution||''}</td>
+      <td style="color:${c.discDate?'var(--red)':'var(--text-dim)'}">${c.discDate?fmtDate(c.discDate):'Active'}</td>
+      <td class="td-wrap">${c.notes||''}</td>
+      <td><button class="edit-btn" onclick="editCB(${i})">✎</button><button class="delete-btn" onclick="delCB(${i})">✕</button></td>
+    </tr>`).join('')||'<tr><td colspan="10" class="empty">No policies defined</td></tr>';
+}
+
+function editCB(i){
+  const cbs=load('cb'), c=cbs[i];
+  document.getElementById('cbEditIdx').value=i;
+  document.getElementById('cbElig').value=c.eligibility||'';
+  document.getElementById('cbDept').value=c.department||'';
+  document.getElementById('cbName').value=c.bonusName||'';
+  document.getElementById('cbAmtPHP').value=c.amtPHP||0;
+  document.getElementById('cbAmtEUR').value=c.amtEUR||0;
+  document.getElementById('cbDist').value=c.distribution||'';
+  document.getElementById('cbDiscDate').value=c.discDate||'';
+  document.getElementById('cbTerms').value=c.terms||'';
+  document.getElementById('cbNotes').value=c.notes||'';
+  openModal('cbModal');
+}
+
+function saveCB(){
+  const idx=document.getElementById('cbEditIdx').value;
+  const c={eligibility:document.getElementById('cbElig').value,department:document.getElementById('cbDept').value,bonusName:document.getElementById('cbName').value.trim(),amtPHP:parseFloat(document.getElementById('cbAmtPHP').value)||0,amtEUR:parseFloat(document.getElementById('cbAmtEUR').value)||0,distribution:document.getElementById('cbDist').value,discDate:document.getElementById('cbDiscDate').value,terms:document.getElementById('cbTerms').value,notes:document.getElementById('cbNotes').value};
+  const cbs=load('cb');
+  if(idx!=='') cbs[+idx]=c; else cbs.push(c);
+  save('cb',cbs);
+  closeModal('cbModal');
+  document.getElementById('cbEditIdx').value='';
+  renderCB();
+  toast('Policy saved ✓');
+}
+
+function delCB(i){
+  if(!confirm('Delete?')) return;
+  const cbs=load('cb'); cbs.splice(i,1); save('cb',cbs); renderCB(); toast('Deleted');
+}
+
+// ─────────── DBT ───────────
+function renderDBT(){
+  const dbts=load('dbt');
+  document.getElementById('dbtBody').innerHTML = dbts.map((d,i)=>`
+    <tr>
+      <td>${d.email}</td>
+      <td><strong>${d.salary!=null?fmt(+d.salary):'—'}</strong></td>
+      <td>${currBadge(d.currency)}</td>
+      <td><button class="edit-btn" onclick="editDBT(${i})">✎</button><button class="delete-btn" onclick="delDBT(${i})">✕</button></td>
+    </tr>`).join('')||'<tr><td colspan="4" class="empty">No DBT records</td></tr>';
+}
+
+function editDBT(i){
+  const dbts=load('dbt'), d=dbts[i];
+  document.getElementById('dbtEditIdx').value=i;
+  document.getElementById('dbtEmail').value=d.email||'';
+  document.getElementById('dbtSalary').value=d.salary||'';
+  document.getElementById('dbtCurr').value=d.currency||'PHP';
+  openModal('dbtModal');
+}
+
+function saveDBT(){
+  const idx=document.getElementById('dbtEditIdx').value;
+  const d={email:document.getElementById('dbtEmail').value.trim(),salary:parseFloat(document.getElementById('dbtSalary').value)||null,currency:document.getElementById('dbtCurr').value};
+  const dbts=load('dbt');
+  if(idx!=='') dbts[+idx]=d; else dbts.push(d);
+  save('dbt',dbts);
+  closeModal('dbtModal');
+  document.getElementById('dbtEditIdx').value='';
+  renderDBT();
+  toast('DBT record saved ✓');
+}
+
+function delDBT(i){
+  if(!confirm('Delete?')) return;
+  const dbts=load('dbt'); dbts.splice(i,1); save('dbt',dbts); renderDBT(); toast('Deleted');
+}
+
+// ─────────── FX ───────────
+function renderFX(){
+  const fxs=load('fx');
+  document.getElementById('fxBody').innerHTML = fxs.map((f,i)=>`
+    <tr>
+      <td><strong>${f.pair}</strong></td>
+      <td class="currency-usd"><strong>${f.rate}</strong></td>
+      <td style="color:var(--text-dim)">${fmtDate(f.updated)}</td>
+      <td><button class="edit-btn" onclick="editFX(${i})">✎</button><button class="delete-btn" onclick="delFX(${i})">✕</button></td>
+    </tr>`).join('')||'<tr><td colspan="4" class="empty">No FX rates defined</td></tr>';
+}
+
+function editFX(i){
+  const fxs=load('fx'), f=fxs[i];
+  document.getElementById('fxEditIdx').value=i;
+  document.getElementById('fxPair').value=f.pair||'';
+  document.getElementById('fxRate').value=f.rate||'';
+  document.getElementById('fxDate').value=f.updated||'';
+  openModal('fxModal');
+}
+
+function saveFX(){
+  const idx=document.getElementById('fxEditIdx').value;
+  const f={pair:document.getElementById('fxPair').value.trim(),rate:parseFloat(document.getElementById('fxRate').value)||0,updated:document.getElementById('fxDate').value};
+  const fxs=load('fx');
+  if(idx!=='') fxs[+idx]=f; else fxs.push(f);
+  save('fx',fxs);
+  closeModal('fxModal');
+  document.getElementById('fxEditIdx').value='';
+  renderFX();
+  toast('FX rate saved ✓');
+}
+
+function delFX(i){
+  if(!confirm('Delete?')) return;
+  const fxs=load('fx'); fxs.splice(i,1); save('fx',fxs); renderFX(); toast('Deleted');
+}
+
+function doConvert(){
+  const amt=parseFloat(document.getElementById('convertAmount').value)||0;
+  const from=document.getElementById('convertFrom').value;
+  const to=document.getElementById('convertTo').value;
+  const usd=toUSD(amt,from);
+  const rates=load('fx');
+  const usdRates={'USD':1};
+  rates.forEach(r=>{ const m=r.pair.match(/USD\s*to\s*(\w+)/i); if(m) usdRates[m[1]]=parseFloat(r.rate); });
+  let result;
+  if(to==='USD') result=usd;
+  else result=usd*(usdRates[to]||1);
+  document.getElementById('convertResult').textContent=`${fmt(result,4)} ${to}`;
+}
+
+// ─────────── INIT ───────────
+document.getElementById('headerDate').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+seedIfEmpty();
+refreshDashboard();
+</script>
+</body>
+</html>
