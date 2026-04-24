@@ -164,6 +164,7 @@
   <button class="active" onclick="showTab('dashboard')">📊 Dashboard</button>
   <button onclick="showTab('employees')">👥 Employees</button>
   <button onclick="showTab('payroll')">💳 Payroll</button>
+  <button onclick="showTab('projectbalance')">📊 Project Balance</button>
   <button onclick="showTab('reimbursements')">🧾 Reimbursements</button>
   <button onclick="showTab('bonuses')">🎁 Bonuses</button>
   <button onclick="showTab('tracker')">📈 Tracker</button>
@@ -253,6 +254,45 @@
     <span id="payTotalComm"></span>&nbsp;|&nbsp;
     <span id="payTotalTotal"></span>
   </div>
+</div>
+
+<!-- ───── PROJECT BALANCE ───── -->
+<div id="tab-projectbalance" class="tab">
+  <div class="section-head">
+    <div><h2>Project Balance</h2><p>Deals tracker — spend, revenue, profit &amp; status per project <span class="formula-tag">AUTO-COMPUTE</span></p></div>
+    <div class="search-box">
+      <input id="pbSearch" placeholder="Search tag, client, city…" oninput="renderPB()" style="width:200px">
+      <button class="btn btn-primary btn-sm" onclick="openModal('pbModal')">+ Add Project</button>
+    </div>
+  </div>
+  <div class="filter-row">
+    <select id="pbStatusFilter" onchange="renderPB()">
+      <option value="">All Statuses</option>
+      <option>Paid</option><option>Overdue</option><option>Sent/Awaiting</option><option>Free Event</option><option>For CD confirmation</option>
+    </select>
+    <select id="pbRegionFilter" onchange="renderPB()">
+      <option value="">All Regions</option>
+      <option>APAC</option><option>EU</option>
+    </select>
+    <select id="pbTypeFilter" onchange="renderPB()">
+      <option value="">All Types</option>
+      <option>Roundtable</option><option>Masterclass</option><option>Productions</option><option>Guesting</option><option>Virtual Roundtable</option><option>Virtual Masterclass</option><option>Other</option>
+    </select>
+    <select id="pbYearFilter" onchange="renderPB()"><option value="">All Years</option></select>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>Project Tag</th><th>Date</th><th>Client</th><th>City/Region</th><th>Type</th><th>MoC</th><th>Attended</th>
+        <th>Total Spend <span class="formula-tag">∑</span></th><th>Project Amount</th>
+        <th>Profit <span class="formula-tag">∑</span></th><th>Profit % <span class="formula-tag">∑</span></th>
+        <th>Status</th><th>Payment Date</th>
+        <th>Source</th><th>Management</th><th>Region</th><th>Format</th><th>Type</th><th>Actions</th>
+      </tr></thead>
+      <tbody id="pbBody"></tbody>
+    </table>
+  </div>
+  <div style="margin-top:14px;padding:14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);font-size:12px;" id="pbTotals"></div>
 </div>
 
 <!-- ───── REIMBURSEMENTS ───── -->
@@ -420,6 +460,67 @@
   </div>
 </div>
 
+<!-- Project Balance Modal -->
+<div class="modal-overlay" id="pbModal">
+  <div class="modal">
+    <div class="modal-head"><h3 id="pbModalTitle">Add Project</h3><button class="modal-close" onclick="closeModal('pbModal')">✕</button></div>
+    <input type="hidden" id="pbEditIdx">
+    <div class="form-grid">
+      <div class="form-group"><label>Project Tag *</label><input id="pbTag" placeholder="e.g. CLF_US, BVOY_EMEA"></div>
+      <div class="form-group"><label>Date *</label><input id="pbDate" type="date"></div>
+      <div class="form-group"><label>Client *</label><input id="pbClient" placeholder="e.g. Salesforce"></div>
+      <div class="form-group"><label>City/Region</label><input id="pbCity" placeholder="e.g. Singapore, London"></div>
+      <div class="form-group"><label>Event Type</label><select id="pbType"><option>Lunch</option><option>Dinner</option><option>Breakfast</option><option>Virtual Roundtable</option><option>In-Person Masterclass</option><option>Virtual Masterclass</option><option>Physical Guesting</option><option>Virtual Guesting</option><option>Appointment Setting</option><option>Ortus Productions</option></select></div>
+      <div class="form-group"><label>MoC</label><input id="pbMoC" placeholder="Event Manager / MoC name"></div>
+      <div class="form-group"><label>Moderator</label><input id="pbModerator"></div>
+      <div class="form-group"><label>Attended</label><input id="pbAttended" type="number" value="0"></div>
+    </div>
+    <div class="divider"></div>
+    <h4 style="font-size:12px;color:var(--text-dim);margin-bottom:12px;letter-spacing:.08em;text-transform:uppercase;">Spend Breakdown</h4>
+    <div class="form-grid">
+      <div class="form-group"><label>Venue (F&B)</label><input id="pbVenFB" type="number" step="0.01" value="0"></div>
+      <div class="form-group"><label>Venue (Event Design)</label><input id="pbVenDesign" type="number" step="0.01" value="0"></div>
+      <div class="form-group"><label>Venue (AV)</label><input id="pbVenAV" type="number" step="0.01" value="0"></div>
+      <div class="form-group"><label>Travel (Accommodation)</label><input id="pbTrvAcc" type="number" step="0.01" value="0"></div>
+      <div class="form-group"><label>Travel (Flights)</label><input id="pbTrvFlight" type="number" step="0.01" value="0"></div>
+      <div class="form-group"><label>Travel (Transportation)</label><input id="pbTrvTranspo" type="number" step="0.01" value="0"></div>
+      <div class="form-group"><label>MOC/Helper/Moderator</label><input id="pbMocHelp" type="number" step="0.01" value="0"></div>
+      <div class="form-group"><label>Marketing/Collateral</label><input id="pbMarketing" type="number" step="0.01" value="0"></div>
+      <div class="form-group"><label>Photographer</label><input id="pbPhotog" type="number" step="0.01" value="0"></div>
+      <div class="form-group"><label>Total Spend <span class="formula-tag">AUTO</span></label><input id="pbTotalSpend" readonly style="color:var(--accent)"></div>
+    </div>
+    <div class="divider"></div>
+    <h4 style="font-size:12px;color:var(--text-dim);margin-bottom:12px;letter-spacing:.08em;text-transform:uppercase;">Revenue & Profit</h4>
+    <div class="form-grid">
+      <div class="form-group"><label>Project Amount (Invoice)</label><input id="pbProjectAmt" type="number" step="0.01" value="0"></div>
+      <div class="form-group"><label>Add-ons Revenue</label><input id="pbAddOns" type="number" step="0.01" value="0"></div>
+      <div class="form-group"><label>Top-up Invoice</label><input id="pbTopUp" type="number" step="0.01" value="0"></div>
+      <div class="form-group"><label>GST</label><input id="pbGST" type="number" step="0.01" value="0"></div>
+      <div class="form-group"><label>Guesting Commissions</label><input id="pbGuestComm" type="number" step="0.01" value="0"></div>
+      <div class="form-group"><label>Sales Commissions</label><input id="pbSalesComm" type="number" step="0.01" value="0"></div>
+      <div class="form-group"><label>Profit <span class="formula-tag">AUTO</span></label><input id="pbProfit" readonly style="color:var(--accent)"></div>
+      <div class="form-group"><label>Profit % <span class="formula-tag">AUTO</span></label><input id="pbProfitPct" readonly style="color:var(--accent)"></div>
+    </div>
+    <div class="divider"></div>
+    <div class="form-grid">
+      <div class="form-group"><label>Status</label><select id="pbStatus"><option>Paid</option><option>Overdue</option><option>Sent/Awaiting</option><option>For CD confirmation</option><option>Free Event</option></select></div>
+      <div class="form-group"><label>Payment Date</label><input id="pbPayDate" type="date"></div>
+      <div class="form-group"><label>Source (Person)</label><input id="pbSource" placeholder="e.g. Marcella"></div>
+      <div class="form-group"><label>Management (Person)</label><input id="pbMgmt" placeholder="e.g. Flandra"></div>
+      <div class="form-group"><label>Source Region</label><select id="pbSourceRegion"><option>EU</option><option>APAC</option><option>NA</option></select></div>
+      <div class="form-group"><label>Mgmt Region</label><select id="pbMgmtRegion"><option>EU</option><option>APAC</option><option>NA</option></select></div>
+      <div class="form-group"><label>Client Region</label><select id="pbRegion"><option>EU</option><option>APAC</option><option>NA</option></select></div>
+      <div class="form-group"><label>East/West</label><select id="pbEastWest"><option>EAST</option><option>WEST</option></select></div>
+      <div class="form-group"><label>OC/NON-OC</label><select id="pbOC"><option>NON-OC</option><option>OC</option></select></div>
+      <div class="form-group"><label>Format</label><select id="pbFormat"><option>Roundtable</option><option>Masterclass</option><option>Productions</option><option>Guesting</option><option>Virtual Roundtable</option><option>Virtual Masterclass</option><option>Other</option></select></div>
+      <div class="form-group"><label>Physical/Virtual</label><select id="pbPhysVirt"><option>Physical</option><option>Virtual</option></select></div>
+      <div class="form-group"><label>TL (Team Lead)</label><input id="pbTL"></div>
+      <div class="form-group"><label>Closed Date</label><input id="pbClosedDate" type="date"></div>
+    </div>
+    <div class="form-actions"><button class="btn btn-primary" onclick="savePB()">Save Project</button><button class="btn btn-secondary" onclick="closeModal('pbModal')">Cancel</button></div>
+  </div>
+</div>
+
 <!-- Reimb Modal -->
 <div class="modal-overlay" id="reimModal">
   <div class="modal">
@@ -536,7 +637,7 @@
 
 <script>
 // ─────────── DATA STORE ───────────
-const KEYS = { emp:'pay_employees', pay:'pay_payroll', reimb:'pay_reimb', bonus:'pay_bonuses', tracker:'pay_tracker', cb:'pay_cb', dbt:'pay_dbt', fx:'pay_fx' };
+const KEYS = { emp:'pay_employees', pay:'pay_payroll', reimb:'pay_reimb', bonus:'pay_bonuses', tracker:'pay_tracker', cb:'pay_cb', dbt:'pay_dbt', fx:'pay_fx', pb:'pay_pb' };
 function load(k){ try{ return JSON.parse(localStorage.getItem(KEYS[k]))||[] }catch{ return [] } }
 function save(k,d){ localStorage.setItem(KEYS[k], JSON.stringify(d)) }
 
@@ -672,7 +773,17 @@ function seedIfEmpty(){
     ]);
   }
 
-  if(load('pay').length===0){
+  if(load('pb').length===0){
+    save('pb',[
+      {tag:'SFRC_UTR_I',date:'2024-01-16',client:'Salesforce',city:'Utrecht',eventType:'Lunch',moc:'Mozes',moderator:'',attended:11,venFB:0,venDesign:0,venAV:0,trvAcc:86.9,trvFlight:0,trvTranspo:157.68,mocHelp:0,marketing:36.81,photog:181.5,guestComm:0,salesComm:0,totalSpend:462.9,projectAmt:15500,addOns:0,topUp:0,gst:0,revenue:15500,profit:15037.1,profitPct:0.9701,status:'Paid',payDate:'2024-02-07',source:'Marcella',management:'Flandra',sourceRegion:'EU',mgmtRegion:'EU',clientRegion:'EU',eastWest:'WEST',oc:'NON-OC',format:'Roundtable',physVirt:'Physical',tl:'',closedDate:'2023-10-09'},
+      {tag:'WEBX_HOUST_I',date:'2024-01-17',client:'WEBEX',city:'Houston',eventType:'Dinner',moc:'Reggie - EXTERNAL',moderator:'',attended:10,venFB:1975.45,venDesign:0,venAV:0,trvAcc:0,trvFlight:0,trvTranspo:0,mocHelp:1500,marketing:143.72,photog:160.88,guestComm:0,salesComm:0,totalSpend:3780.05,projectAmt:18000,addOns:0,topUp:0,gst:0,revenue:18000,profit:14219.95,profitPct:0.79,status:'Paid',payDate:'2024-02-07',source:'Austen',management:'Austen',sourceRegion:'EU',mgmtRegion:'EU',clientRegion:'EU',eastWest:'WEST',oc:'NON-OC',format:'Roundtable',physVirt:'Physical',tl:'',closedDate:'2023-09-06'},
+      {tag:'ZEN_APAC3_MEL',date:'2025-11-18',client:'Zendesk',city:'Melbourne',eventType:'Lunch',moc:'Simon - EXTERNAL',moderator:'VOLUNTEER - Mohan Aiyaswami',attended:13,venFB:4114.5,venDesign:0,venAV:0,trvAcc:0,trvFlight:0,trvTranspo:0,mocHelp:0,marketing:0,photog:65.23,guestComm:0,salesComm:1853.44,totalSpend:6902.51,projectAmt:16475,addOns:0,topUp:0,gst:0,revenue:16475,profit:9572.49,profitPct:0.581,status:'Paid',payDate:'2025-11-18',source:'Sab',management:'Sab',sourceRegion:'APAC',mgmtRegion:'APAC',clientRegion:'APAC',eastWest:'EAST',oc:'NON-OC',format:'Roundtable',physVirt:'Physical',tl:'Jessi',closedDate:'2025-08-13'},
+      {tag:'MON_NYC_VI',date:'2025-11-13',client:'monday.com',city:'New York City',eventType:'Lunch',moc:'Mozes',moderator:'VOLUNTEER - Karl Schlegel',attended:13,venFB:5748.51,venDesign:0,venAV:0,trvAcc:0,trvFlight:0,trvTranspo:0,mocHelp:0,marketing:0,photog:122.89,guestComm:0,salesComm:1447.7,totalSpend:8456.91,projectAmt:15500,addOns:0,topUp:0,gst:0,revenue:15500,profit:7043.09,profitPct:0.4544,status:'Paid',payDate:'2025-04-01',source:'Marcella',management:'Bleron',sourceRegion:'EU',mgmtRegion:'EU',clientRegion:'EU',eastWest:'WEST',oc:'NON-OC',format:'Roundtable',physVirt:'Physical',tl:'Bleron',closedDate:'2024-12-16'},
+      {tag:'GIT_OP_SIN',date:'2026-02-10',client:'Gitlab',city:'Singapore',eventType:'Ortus Productions',moc:'Jessi',moderator:'',attended:35,venFB:0,venDesign:0,venAV:0,trvAcc:0,trvFlight:1907.06,trvTranspo:530.78,mocHelp:998.77,marketing:0,photog:351.37,guestComm:0,salesComm:2171.82,totalSpend:30140.12,projectAmt:47811,addOns:0,topUp:0,gst:0,revenue:47811,profit:17670.88,profitPct:0.3696,status:'Paid',payDate:'2026-01-09',source:'Sab',management:'Jessi',sourceRegion:'APAC',mgmtRegion:'APAC',clientRegion:'APAC',eastWest:'EAST',oc:'NON-OC',format:'Productions',physVirt:'Physical',tl:'Jessi',closedDate:'2026-01-20'},
+      {tag:'VON_STHLM_VIII',date:'2026-03-10',client:'Vonage',city:'Stockholm',eventType:'Ortus Productions',moc:'Wida - EXTERNAL',moderator:'',attended:38,venFB:16622.2,venDesign:0,venAV:0,trvAcc:0,trvFlight:0,trvTranspo:0,mocHelp:0,marketing:0,photog:727.07,guestComm:0,salesComm:2768.33,totalSpend:23985.45,projectAmt:45000,addOns:0,topUp:0,gst:0,revenue:45000,profit:21014.55,profitPct:0.467,status:'Paid',payDate:'2026-04-06',source:'Andrea',management:'Bleron',sourceRegion:'EU',mgmtRegion:'EU',clientRegion:'EU',eastWest:'WEST',oc:'NON-OC',format:'Productions',physVirt:'Physical',tl:'Bleron',closedDate:'2026-01-19'},
+      {tag:'SEON_JKT_OPI',date:'2026-04-28',client:'SEON',city:'Jakarta',eventType:'Ortus Productions',moc:'Yna',moderator:'',attended:0,venFB:3240.86,venDesign:0,venAV:0,trvAcc:0,trvFlight:0,trvTranspo:0,mocHelp:1671.87,marketing:0,photog:109.26,guestComm:0,salesComm:2840.82,totalSpend:8417.29,projectAmt:29250,addOns:0,topUp:0,gst:0,revenue:29250,profit:20832.71,profitPct:0.7122,status:'Paid',payDate:'2026-04-13',source:'Ciara',management:'Jessi',sourceRegion:'APAC',mgmtRegion:'APAC',clientRegion:'APAC',eastWest:'EAST',oc:'NON-OC',format:'Productions',physVirt:'Physical',tl:'Jessi',closedDate:'2026-01-16'},
+    ]);
+  }
     save('pay',[
       {name:'Petra Barna',email:'petra@ortusclub.com',startPeriod:'2020-08-01',endPeriod:'2020-08-31',currency:'USD',rate:3000,nightDiff:0,adjustments:0,deductions:0,reimbursements:0,salary:3000,commUSD:1529.2,commLC:1657.2,total:4657.2,dealTag:'CLF_US\nBVOY_EMEA (128.00 USD)\nAKAM_INDO (1049.00 USD)',notes:'',receipt:'https://drive.google.com/file/d/1-qA6neYAAcWFvNf43JJcgin1sepi7gnz/view?usp=sharing',datePaid:'2021-01-26',gdComms:0,overhead:0},
       {name:'Marcella Tortora',email:'marcella@ortusclub.com',startPeriod:'2020-12-21',endPeriod:'2021-01-15',currency:'EUR',rate:1800,nightDiff:0,adjustments:0,deductions:0,reimbursements:0,salary:1800,commUSD:0,commLC:0,total:1800,dealTag:'-',notes:'',receipt:'',datePaid:'2021-01-25',gdComms:0,overhead:0},
@@ -722,6 +833,7 @@ function showTab(id){
   if(id==='dashboard') refreshDashboard();
   if(id==='employees') renderEmployees();
   if(id==='payroll') renderPayroll();
+  if(id==='projectbalance') renderPB();
   if(id==='reimbursements') renderReimb();
   if(id==='bonuses') renderBonuses();
   if(id==='tracker') renderTracker();
@@ -989,6 +1101,187 @@ function savePayroll(){
 function delPay(i){
   if(!confirm('Delete this payroll entry?')) return;
   const pays=load('pay'); pays.splice(i,1); save('pay',pays); renderPayroll(); toast('Deleted');
+}
+
+// ─────────── PROJECT BALANCE ───────────
+function calcPBProfit(){
+  const spend=[+document.getElementById('pbVenFB').value||0,+document.getElementById('pbVenDesign').value||0,+document.getElementById('pbVenAV').value||0,+document.getElementById('pbTrvAcc').value||0,+document.getElementById('pbTrvFlight').value||0,+document.getElementById('pbTrvTranspo').value||0,+document.getElementById('pbMocHelp').value||0,+document.getElementById('pbMarketing').value||0,+document.getElementById('pbPhotog').value||0].reduce((a,b)=>a+b,0);
+  const addons=+document.getElementById('pbAddOns').value||0;
+  const topup=+document.getElementById('pbTopUp').value||0;
+  const guestComm=+document.getElementById('pbGuestComm').value||0;
+  const salesComm=+document.getElementById('pbSalesComm').value||0;
+  const totalSpend=spend+guestComm+salesComm;
+  document.getElementById('pbTotalSpend').value=totalSpend.toFixed(2);
+  const projectAmt=+document.getElementById('pbProjectAmt').value||0;
+  const revenue=projectAmt+addons+topup;
+  const profit=revenue-totalSpend;
+  const pct=revenue>0?(profit/revenue):0;
+  document.getElementById('pbProfit').value=profit.toFixed(2);
+  document.getElementById('pbProfitPct').value=(pct*100).toFixed(2)+'%';
+}
+['pbVenFB','pbVenDesign','pbVenAV','pbTrvAcc','pbTrvFlight','pbTrvTranspo','pbMocHelp','pbMarketing','pbPhotog','pbProjectAmt','pbAddOns','pbTopUp','pbGuestComm','pbSalesComm'].forEach(id=>{ const el=document.getElementById(id); if(el) el.addEventListener('input',calcPBProfit); });
+
+function renderPB(){
+  const q=(document.getElementById('pbSearch').value||'').toLowerCase();
+  const sf=document.getElementById('pbStatusFilter').value;
+  const rf=document.getElementById('pbRegionFilter').value;
+  const tf=document.getElementById('pbTypeFilter').value;
+  const yf=document.getElementById('pbYearFilter').value;
+  const all=load('pb');
+  // Populate year filter
+  const years=[...new Set(all.map(p=>(p.date||'').substring(0,4)).filter(Boolean))].sort();
+  const ysel=document.getElementById('pbYearFilter');
+  if(ysel.options.length<2){ years.forEach(y=>{ const o=document.createElement('option'); o.value=y; o.textContent=y; ysel.appendChild(o); }); }
+
+  const rows=all.filter(p=>{
+    if(sf && p.status!==sf) return false;
+    if(rf && p.clientRegion!==rf) return false;
+    if(tf && p.format!==tf) return false;
+    if(yf && !(p.date||'').startsWith(yf)) return false;
+    if(q && !p.tag?.toLowerCase().includes(q) && !p.client?.toLowerCase().includes(q) && !p.city?.toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  let totSpend=0, totAmt=0, totProfit=0, counts={Paid:0,Overdue:0};
+  document.getElementById('pbBody').innerHTML = rows.map((p,i)=>{
+    const spend=+p.totalSpend||0, amt=+p.projectAmt||0, profit=+p.profit||0, pct=+p.profitPct||0;
+    totSpend+=spend; totAmt+=amt; totProfit+=profit;
+    if(counts[p.status]!==undefined) counts[p.status]++;
+    const profitColor = profit>=0 ? 'amount-pos' : 'amount-neg';
+    const pctPct = (pct*100).toFixed(1);
+    const statusColor = p.status==='Paid'?'badge-paid':p.status==='Overdue'?'badge-unpaid':'badge';
+    const actualIdx = all.indexOf(p);
+    return `<tr>
+      <td><strong style="color:var(--accent2);font-size:11px">${p.tag||''}</strong></td>
+      <td style="color:var(--text-dim)">${fmtDate(p.date)}</td>
+      <td class="td-wrap" title="${p.client||''}">${p.client||''}</td>
+      <td style="color:var(--text-mid);font-size:11px">${p.city||''}</td>
+      <td><span class="tag">${p.eventType||''}</span></td>
+      <td style="color:var(--text-dim)">${p.moc||''}</td>
+      <td style="color:var(--text-dim)">${p.attended||''}</td>
+      <td>${fmt(spend)}</td>
+      <td><strong>${fmt(amt)}</strong></td>
+      <td><span class="${profitColor}"><strong>${fmt(profit)}</strong></span></td>
+      <td style="color:${pct>=0.5?'var(--green)':pct>=0.2?'var(--accent3)':'var(--red)'}">${(pct*100).toFixed(1)}%</td>
+      <td><span class="badge ${statusColor}">${p.status||'—'}</span></td>
+      <td style="color:var(--text-dim)">${fmtDate(p.payDate)}</td>
+      <td>${p.source||''}</td>
+      <td>${p.management||''}</td>
+      <td>${p.clientRegion?currBadge(p.clientRegion):''}</td>
+      <td><span class="tag">${p.format||''}</span></td>
+      <td style="color:var(--text-dim);font-size:10px">${p.physVirt||''}</td>
+      <td><button class="edit-btn" onclick="editPB(${actualIdx})">✎</button><button class="delete-btn" onclick="delPB(${actualIdx})">✕</button></td>
+    </tr>`;
+  }).join('')||'<tr><td colspan="19" class="empty">No project balance entries. Add one above.</td></tr>';
+
+  const avgPct = totAmt > 0 ? ((totAmt-totSpend)/totAmt*100).toFixed(1) : '—';
+  document.getElementById('pbTotals').innerHTML=`
+    ${rows.length} projects shown &nbsp;|&nbsp;
+    Total Spend: <strong>${fmt(totSpend)}</strong> &nbsp;|&nbsp;
+    Total Revenue: <strong>${fmt(totAmt)}</strong> &nbsp;|&nbsp;
+    Total Profit: <strong class="${totProfit>=0?'amount-pos':'amount-neg'}">${fmt(totProfit)}</strong> &nbsp;|&nbsp;
+    Avg Margin: <strong>${avgPct}%</strong> &nbsp;|&nbsp;
+    <span class="badge badge-paid">${counts.Paid} Paid</span>&nbsp;
+    <span class="badge badge-unpaid">${counts.Overdue} Overdue</span>
+  `;
+}
+
+function editPB(i){
+  const all=load('pb'), p=all[i];
+  document.getElementById('pbEditIdx').value=i;
+  document.getElementById('pbModalTitle').textContent='Edit Project';
+  document.getElementById('pbTag').value=p.tag||'';
+  document.getElementById('pbDate').value=p.date||'';
+  document.getElementById('pbClient').value=p.client||'';
+  document.getElementById('pbCity').value=p.city||'';
+  document.getElementById('pbType').value=p.eventType||'Dinner';
+  document.getElementById('pbMoC').value=p.moc||'';
+  document.getElementById('pbModerator').value=p.moderator||'';
+  document.getElementById('pbAttended').value=p.attended||0;
+  document.getElementById('pbVenFB').value=p.venFB||0;
+  document.getElementById('pbVenDesign').value=p.venDesign||0;
+  document.getElementById('pbVenAV').value=p.venAV||0;
+  document.getElementById('pbTrvAcc').value=p.trvAcc||0;
+  document.getElementById('pbTrvFlight').value=p.trvFlight||0;
+  document.getElementById('pbTrvTranspo').value=p.trvTranspo||0;
+  document.getElementById('pbMocHelp').value=p.mocHelp||0;
+  document.getElementById('pbMarketing').value=p.marketing||0;
+  document.getElementById('pbPhotog').value=p.photog||0;
+  document.getElementById('pbProjectAmt').value=p.projectAmt||0;
+  document.getElementById('pbAddOns').value=p.addOns||0;
+  document.getElementById('pbTopUp').value=p.topUp||0;
+  document.getElementById('pbGST').value=p.gst||0;
+  document.getElementById('pbGuestComm').value=p.guestComm||0;
+  document.getElementById('pbSalesComm').value=p.salesComm||0;
+  document.getElementById('pbStatus').value=p.status||'Paid';
+  document.getElementById('pbPayDate').value=p.payDate||'';
+  document.getElementById('pbSource').value=p.source||'';
+  document.getElementById('pbMgmt').value=p.management||'';
+  document.getElementById('pbSourceRegion').value=p.sourceRegion||'EU';
+  document.getElementById('pbMgmtRegion').value=p.mgmtRegion||'EU';
+  document.getElementById('pbRegion').value=p.clientRegion||'EU';
+  document.getElementById('pbEastWest').value=p.eastWest||'EAST';
+  document.getElementById('pbOC').value=p.oc||'NON-OC';
+  document.getElementById('pbFormat').value=p.format||'Roundtable';
+  document.getElementById('pbPhysVirt').value=p.physVirt||'Physical';
+  document.getElementById('pbTL').value=p.tl||'';
+  document.getElementById('pbClosedDate').value=p.closedDate||'';
+  calcPBProfit();
+  openModal('pbModal');
+}
+
+function savePB(){
+  const idx=document.getElementById('pbEditIdx').value;
+  const venFB=parseFloat(document.getElementById('pbVenFB').value)||0;
+  const venDesign=parseFloat(document.getElementById('pbVenDesign').value)||0;
+  const venAV=parseFloat(document.getElementById('pbVenAV').value)||0;
+  const trvAcc=parseFloat(document.getElementById('pbTrvAcc').value)||0;
+  const trvFlight=parseFloat(document.getElementById('pbTrvFlight').value)||0;
+  const trvTranspo=parseFloat(document.getElementById('pbTrvTranspo').value)||0;
+  const mocHelp=parseFloat(document.getElementById('pbMocHelp').value)||0;
+  const marketing=parseFloat(document.getElementById('pbMarketing').value)||0;
+  const photog=parseFloat(document.getElementById('pbPhotog').value)||0;
+  const guestComm=parseFloat(document.getElementById('pbGuestComm').value)||0;
+  const salesComm=parseFloat(document.getElementById('pbSalesComm').value)||0;
+  const spend=venFB+venDesign+venAV+trvAcc+trvFlight+trvTranspo+mocHelp+marketing+photog;
+  const totalSpend=spend+guestComm+salesComm;
+  const projectAmt=parseFloat(document.getElementById('pbProjectAmt').value)||0;
+  const addOns=parseFloat(document.getElementById('pbAddOns').value)||0;
+  const topUp=parseFloat(document.getElementById('pbTopUp').value)||0;
+  const revenue=projectAmt+addOns+topUp;
+  const profit=revenue-totalSpend;
+  const profitPct=revenue>0?profit/revenue:0;
+  const p={
+    tag:document.getElementById('pbTag').value.trim(),date:document.getElementById('pbDate').value,
+    client:document.getElementById('pbClient').value.trim(),city:document.getElementById('pbCity').value.trim(),
+    eventType:document.getElementById('pbType').value,moc:document.getElementById('pbMoC').value.trim(),
+    moderator:document.getElementById('pbModerator').value.trim(),attended:parseInt(document.getElementById('pbAttended').value)||0,
+    venFB,venDesign,venAV,trvAcc,trvFlight,trvTranspo,mocHelp,marketing,photog,
+    guestComm,salesComm,totalSpend,projectAmt,addOns,topUp,
+    gst:parseFloat(document.getElementById('pbGST').value)||0,
+    revenue,profit,profitPct,
+    status:document.getElementById('pbStatus').value,payDate:document.getElementById('pbPayDate').value,
+    source:document.getElementById('pbSource').value.trim(),management:document.getElementById('pbMgmt').value.trim(),
+    sourceRegion:document.getElementById('pbSourceRegion').value,mgmtRegion:document.getElementById('pbMgmtRegion').value,
+    clientRegion:document.getElementById('pbRegion').value,eastWest:document.getElementById('pbEastWest').value,
+    oc:document.getElementById('pbOC').value,format:document.getElementById('pbFormat').value,
+    physVirt:document.getElementById('pbPhysVirt').value,tl:document.getElementById('pbTL').value.trim(),
+    closedDate:document.getElementById('pbClosedDate').value
+  };
+  if(!p.tag){ alert('Project Tag is required'); return; }
+  const all=load('pb');
+  if(idx!=='') all[+idx]=p; else all.push(p);
+  save('pb',all);
+  closeModal('pbModal');
+  document.getElementById('pbEditIdx').value='';
+  document.getElementById('pbModalTitle').textContent='Add Project';
+  renderPB();
+  toast('Project saved ✓');
+}
+
+function delPB(i){
+  if(!confirm('Delete this project entry?')) return;
+  const all=load('pb'); all.splice(i,1); save('pb',all); renderPB(); toast('Deleted');
 }
 
 // ─────────── REIMB ───────────
